@@ -6,6 +6,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use(express.static(__dirname));
+
 // Configuración de conexión a Supabase (Pooler)
 const pool = new Pool({
     connectionString: "postgresql://postgres.cvaijwcgznsciwhczlmx:Adminpepe90__@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
