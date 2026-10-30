@@ -99,7 +99,7 @@
             const [attendance, setAttendance] = useState({});
 
             const cargarDatos = () => {
-                fetch(`http://localhost:3000/api/rutinas?usuarioId=${usuario.Id}`)
+                fetch(`/api/rutinas?usuarioId=${usuario.Id}`)
                     .then(res => res.json())
                     .then(data => {
                         const formattedRoutines = {};
@@ -124,7 +124,7 @@
                     })
                     .catch(err => console.error("Error al cargar rutinas:", err));
 
-                fetch(`http://localhost:3000/api/asistencia?usuarioId=${usuario.Id}`)
+                fetch(`/api/asistencia?usuarioId=${usuario.Id}`)
                     .then(res => res.json())
                     .then(data => {
                         const attMap = {};
@@ -153,7 +153,7 @@
                 const now = new Date();
                 const fechaHoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-                fetch('http://localhost:3000/api/historial-cargas', {
+                fetch('/api/historial-cargas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -180,7 +180,7 @@
                             const lastSet = ex.sets[ex.sets.length - 1] || { reps: 10, weight: 0 };
                             const updatedSets = [...ex.sets, { ...lastSet }];
                             
-                            fetch(`http://localhost:3000/api/rutinas/${ex.dbId}`, {
+                            fetch(`/api/rutinas/${ex.dbId}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ setsJson: JSON.stringify(updatedSets) })
@@ -203,7 +203,7 @@
                         if (ex.id === exId) {
                             const updatedSets = ex.sets.filter((_, idx) => idx !== setIndex);
                             
-                            fetch(`http://localhost:3000/api/rutinas/${ex.dbId}`, {
+                            fetch(`/api/rutinas/${ex.dbId}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ setsJson: JSON.stringify(updatedSets) })
@@ -231,7 +231,7 @@
                                 return s;
                             });
 
-                            fetch(`http://localhost:3000/api/rutinas/${ex.dbId}`, {
+                            fetch(`/api/rutinas/${ex.dbId}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ setsJson: JSON.stringify(newSets) })
@@ -251,7 +251,7 @@
 
             const agregarEjercicioDirecto = (exerciseName) => {
                 const initialSets = [{ reps: 10, weight: 0 }];
-                fetch('http://localhost:3000/api/rutinas', {
+                fetch('/api/rutinas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -271,7 +271,7 @@
             };
 
             const removeExercise = (dbId) => {
-                fetch(`http://localhost:3000/api/rutinas/${dbId}`, { method: 'DELETE' })
+                fetch(`/api/rutinas/${dbId}`, { method: 'DELETE' })
                     .then(() => {
                         setRoutines(prev => ({
                             ...prev,
@@ -294,7 +294,7 @@
 
                 setAttendance(prev => ({ ...prev, [dateKey]: nuevoEstado }));
 
-                fetch('http://localhost:3000/api/asistencia', {
+                fetch('/api/asistencia', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuarioId: usuario.Id, fecha: dateKey, asistio: nuevoEstado })
@@ -571,7 +571,7 @@
             const fechaHoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
             const cargarConsumo = () => {
-                fetch(`http://localhost:3000/api/consumo?usuarioId=${usuario.Id}&fecha=${fechaHoy}`)
+                fetch(`/api/consumo?usuarioId=${usuario.Id}&fecha=${fechaHoy}`)
                     .then(res => res.json())
                     .then(data => setAlimentosConsumidos(data))
                     .catch(err => console.error("Error al cargar consumo:", err));
@@ -582,7 +582,7 @@
             }, []);
 
             const guardarPerfil = () => {
-                fetch(`http://localhost:3000/api/usuario/${usuario.Id}`, {
+                fetch(`/api/usuario/${usuario.Id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ peso, altura, edad, actividad, objetivo })
@@ -611,7 +611,7 @@
                 }
 
                 setCargando(true);
-                fetch(`http://localhost:3000/api/alimentos?buscar=${termino}`)
+                fetch(`/api/alimentos?buscar=${termino}`)
                     .then(res => res.json())
                     .then(data => {
                         setAlimentos(data);
@@ -688,7 +688,7 @@
                     grasas: calculo.grasas
                 };
 
-                fetch('http://localhost:3000/api/consumo', {
+                fetch('/api/consumo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(nuevoConsumo)
@@ -701,7 +701,7 @@
             };
 
             const eliminarDelConsumo = (id) => {
-                fetch(`http://localhost:3000/api/consumo/${id}`, {
+                fetch(`/api/consumo/${id}`, {
                     method: 'DELETE'
                 })
                 .then(res => res.json())
@@ -882,7 +882,7 @@
             const chartInstance = useRef(null);
 
             useEffect(() => {
-                fetch(`http://localhost:3000/api/rutinas?usuarioId=${usuario.Id}`)
+                fetch(`/api/rutinas?usuarioId=${usuario.Id}`)
                     .then(res => res.json())
                     .then(data => {
                         const formattedRoutines = {};
@@ -918,7 +918,7 @@
                     setHistorialData([]);
                     return;
                 }
-                fetch(`http://localhost:3000/api/historial-cargas?usuarioId=${usuario.Id}&ejercicio=${encodeURIComponent(selectedExercise)}`)
+                fetch(`/api/historial-cargas?usuarioId=${usuario.Id}&ejercicio=${encodeURIComponent(selectedExercise)}`)
                     .then(res => res.json())
                     .then(data => setHistorialData(data))
                     .catch(err => console.error("Error al cargar historial:", err));
@@ -1046,7 +1046,7 @@
             const handleLogin = async (e) => {
                 e.preventDefault();
                 try {
-                    const res = await fetch('http://localhost:3000/api/login', {
+                    const res = await fetch('/api/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ nombre: nombreInput, password: passwordInput })
@@ -1067,7 +1067,7 @@
             const handleRegister = async (e) => {
                 e.preventDefault();
                 try {
-                    const res = await fetch('http://localhost:3000/api/register', {
+                    const res = await fetch('/api/register', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ nombre: nombreInput, password: passwordInput })
