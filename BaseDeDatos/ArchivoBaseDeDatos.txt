@@ -1,0 +1,54 @@
+PARA CREAR FILAS:
+
+-- Tabla de Usuarios
+CREATE TABLE Usuarios (
+    Id SERIAL PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Password VARCHAR(100) NOT NULL,
+    Peso FLOAT DEFAULT 75,
+    Altura FLOAT DEFAULT 175,
+    Edad INT DEFAULT 20,
+    Actividad FLOAT DEFAULT 1.55,
+    Objetivo VARCHAR(50) DEFAULT 'mantenimiento'
+);
+
+-- Tabla de Rutinas
+CREATE TABLE RutinasEntrenamiento (
+    Id SERIAL PRIMARY KEY,
+    UsuarioId INT REFERENCES Usuarios(Id),
+    DiaSemana INT,
+    NombreEjercicio VARCHAR(150),
+    SetsJson TEXT
+);
+
+-- Tabla de Asistencia
+CREATE TABLE AsistenciaGimnasio (
+    Id SERIAL PRIMARY KEY,
+    UsuarioId INT REFERENCES Usuarios(Id),
+    Fecha DATE,
+    Asistio BOOLEAN
+);
+
+-- Tabla de Consumo Nutricional
+CREATE TABLE ConsumoNutricional (
+    Id SERIAL PRIMARY KEY,
+    UsuarioId INT REFERENCES Usuarios(Id),
+    Fecha DATE,
+    Nombre VARCHAR(150),
+    MedidaTexto VARCHAR(100),
+    Calorias INT,
+    Proteinas FLOAT,
+    Carbohidratos FLOAT,
+    Grasas FLOAT
+);
+
+-- Tabla de Historial de Cargas
+CREATE TABLE HistorialCargas (
+    Id SERIAL PRIMARY KEY,
+    UsuarioId INT REFERENCES Usuarios(Id),
+    Fecha DATE,
+    Ejercicio VARCHAR(150),
+    PesoMaximo FLOAT
+);
+
+--------------------------------------------------------------------------------

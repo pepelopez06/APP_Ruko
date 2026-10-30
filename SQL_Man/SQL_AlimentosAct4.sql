@@ -1,0 +1,42 @@
+USE FitProDB;
+GO
+
+-- SECCIÓN 6: Frutas, Verduras, Aceites y Grasas
+INSERT INTO Alimentos (Nombre, Categoria, Calorias, Proteinas, Carbohidratos, Grasas) VALUES
+('Manzana fresca con cáscara', 'Frutas', 52, 0.3, 14.0, 0.2),
+('Banana / Plátano maduro', 'Frutas', 89, 1.1, 22.8, 0.3),
+('Naranja fresca', 'Frutas', 47, 0.9, 11.8, 0.1),
+('Mandarina fresca', 'Frutas', 53, 0.8, 13.3, 0.3),
+('Pera fresca', 'Frutas', 57, 0.4, 15.2, 0.1),
+('Frutillas / Fresas frescas', 'Frutas', 32, 0.7, 7.7, 0.3),
+('Sandía fresca', 'Frutas', 30, 0.6, 7.6, 0.2),
+('Melón fresco', 'Frutas', 34, 0.8, 8.2, 0.2),
+('Durazno fresco', 'Frutas', 39, 0.9, 9.5, 0.3),
+('Ciruela fresca', 'Frutas', 46, 0.7, 11.4, 0.3),
+('Uvas frescas', 'Frutas', 69, 0.7, 18.1, 0.2),
+('Ananá / Piña fresca', 'Frutas', 50, 0.5, 13.0, 0.1),
+('Kiwi fresco', 'Frutas', 61, 1.1, 14.7, 0.5),
+('Tomate redondo fresco', 'Verduras', 18, 0.9, 3.9, 0.2),
+('Lechuga criolla / mantecosa', 'Verduras', 15, 1.4, 2.9, 0.2),
+('Zanahoria cruda', 'Verduras', 41, 0.9, 9.6, 0.2),
+('Cebolla fresca', 'Verduras', 40, 1.1, 9.3, 0.1),
+('Papa hervida o al horno', 'Verduras', 87, 1.9, 20.1, 0.1),
+('Batata / Boniato al horno', 'Verduras', 86, 1.6, 20.1, 0.1),
+('Espinaca fresca', 'Verduras', 23, 2.9, 3.6, 0.4),
+('Acelga hervida', 'Verduras', 20, 1.8, 3.7, 0.2),
+('Zapallito anco / calabaza', 'Verduras', 40, 1.0, 9.5, 0.1),
+('Brócoli hervido', 'Verduras', 35, 2.4, 7.2, 0.4),
+('Coliflor hervido', 'Verduras', 25, 1.9, 4.9, 0.3),
+('Morrón rojo / Pimiento', 'Verduras', 31, 1.0, 6.0, 0.3),
+('Pepino con cáscara', 'Verduras', 15, 0.7, 3.6, 0.1),
+('Palta / Aguacate argentino', 'Verduras', 160, 2.0, 8.5, 14.7),
+('Aceite de girasol común', 'Aceites y Grasas', 884, 0.0, 0.0, 100.0),
+('Aceite de oliva virgen extra', 'Aceites y Grasas', 884, 0.0, 0.0, 100.0),
+('Aceite de maíz', 'Aceites y Grasas', 884, 0.0, 0.0, 100.0),
+('Mayonesa clásica (Hellmanns / Natura)', 'Grasas', 680, 1.0, 2.5, 75.0),
+('Mayonesa light', 'Grasas', 270, 0.8, 5.0, 27.0),
+('Salsa golf', 'Grasas', 450, 1.0, 8.0, 46.0),
+('Maní tostado salado', 'Snacks', 590, 25.0, 14.0, 50.0),
+('Nueces peladas', 'Frutos Secos', 654, 15.0, 14.0, 65.0),
+('Almendras tostadas', 'Frutos Secos', 579, 21.0, 22.0, 50.0);
+GO

@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RUKO</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- React, ReactDOM y Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { background-color: #0f172a; color: white; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        html, body { max-width: 100%; overflow-x: hidden; }
+    </style>
+</head>
+<body class="bg-slate-900 text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Iconos SVG
+        const Icons = {
+            Dumbbell: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m14.5 9.5 5 5"/><path d="m5 14.5 5 5"/><path d="m11.5 13.5 2-2"/><path d="m7 17 2-2"/><path d="m15 9 2-2"/><path d="m9 15 2-2"/><path d="m13 11 2-2"/><path d="M4 15.5V20h4.5l11.5-11.5-4.5-4.5Z"/></svg>,
+            Apple: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/></svg>,
+            Utensils: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 2v20"/><path d="M18 22H6"/><path d="M6 2v10a3 3 0 0 0 3 3 3 3 0 0 0 3-3V2"/></svg>,
+            TrendingUp: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+            Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Trash2: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+            ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
+            Settings: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Calendar: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        };
+
+        const exerciseDatabase = {
+            "Pecho": [
+                "Press de Banca Plano con Barra", "Press de Banca Inclinado con Barra", "Press de Banca Declinado con Barra",
+                "Press plano con Mancuernas", "Press inclinado con Mancuernas", "Aperturas con Mancuernas en Banco Plano",
+                "Aperturas inclinadas con Mancuernas", "Cruces de Polea Alta", "Cruces de Polea Baja",
+                "Fondos en Paralelas para Pecho", "Flexiones de Pecho (Push-ups)", "Pullover con Mancuerna",
+                "Press en Máquina Contractor (Peck Deck)", "Press Convergente en Máquina"
+            ],
+            "Espalda": [
+                "Dominadas en Barra (Pull-ups)", "Dominadas Supinas (Chin-ups)", "Jalón al Pecho en Polea",
+                "Jalón Tras Nuca en Polea", "Remo con Barra (Estilo Pendlay)", "Remo con Barra inclinado",
+                "Remo con Mancuerna a un Brazo", "Remo en Polea Baja (Agarre Neutro/Estrecho)", "Remo en Punta (T-Bar)",
+                "Pullover en Polea Alta con Barra Recta", "Face Pull con Cuerda", "Encogimientos de Hombros con Mancuernas"
+            ],
+            "Cuádriceps": [
+                "Sentadilla Libre con Barra (Back Squat)", "Sentadilla Frontal con Barra", "Prensa de Piernas 45°",
+                "Prensa Horizontal", "Sentadilla Búlgara con Mancuernas", "Extensiones de Cuádriceps en Máquina",
+                "Zancadas (Lunges) con Mancuernas", "Sentadilla Hack en Máquina", "Sentadilla Goblet con Mancuerna"
+            ],
+            "Isquios / Glúteos": [
+                "Peso Muerto Convencional", "Peso Muerto Sumo", "Peso Muerto Rumano con Barra",
+                "Peso Muerto Rumano con Mancuernas", "Curl Femoral Acostado en Máquina", "Curl Femoral Sentado en Máquina",
+                "Hip Thrust con Barra", "Puente de Glúteos en suelo", "Buenos Días (Good Mornings con Barra)"
+            ],
+            "Hombros": [
+                "Press Militar de Pie con Barra", "Press de Hombros con Mancuernas sentado", "Press Arnold con Mancuernas",
+                "Elevaciones Laterales con Mancuernas", "Elevaciones Laterales en Polea Baja", "Elevaciones Frontales con Disco o Mancuerna",
+                "Pájaros Posteriores con Mancuernas", "Remo al Mentón con Barra Z"
+            ],
+            "Bíceps": [
+                "Curl con Barra Z de Pie", "Curl con Barra Recta", "Curl con Mancuernas Alterno",
+                "Curl Tipo Martillo con Mancuernas", "Curl Predicador en Banco Scott con Barra Z", "Curl Concentrado con Mancuerna",
+                "Curl en Polea Baja con Barra", "Curl 21 con Barra Z"
+            ],
+            "Tríceps": [
+                "Extensiones de Tríceps en Polea con Cuerda", "Extensiones de Tríceps en Polea con Barra V", "Press Francés con Barra Z acostado",
+                "Press Cerrado en Banco Plano con Barra", "Fondos en Paralelas para Tríceps", "Patada de Tríceps con Mancuerna"
+            ],
+            "Core y Gemelos": [
+                "Elevación de Talones de Pie en Máquina (Gemelos)", "Elevación de Talones Sentado en Máquina", "Plancha Abdominal isométrica",
+                "Crunch Abdominal en suelo", "Elevación de Piernas Colgado de la Barra", "Rueda Abdominal (Ab Wheel)"
+            ]
+        };
+
+        const TrainingTab = ({ usuario }) => {
+            const [trainingDays, setTrainingDays] = useState(4);
+            const [isConfigOpen, setIsConfigOpen] = useState(false);
+            const [currentDay, setCurrentDay] = useState(1);
+            const [routines, setRoutines] = useState({});
+            const [nombresDias, setNombresDias] = useState({ 1: "Pecho", 2: "Espalda", 3: "Piernas", 4: "Hombros" });
+            const [isAddingDB, setIsAddingDB] = useState(false);
+            const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("Pecho");
+            const [busquedaEjercicio, setBusquedaEjercicio] = useState('');
+            const [attendance, setAttendance] = useState({});
+
+            const cargarDatos = () => {
+                fetch(`http://localhost:3000/api/rutinas?usuarioId=${usuario.Id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const formattedRoutines = {};
+                        data.forEach(item => {
+                            const dia = item.diasemana || item.DiaSemana;
+                            const idReg = item.id || item.Id;
+                            const nombreEj = item.nombreep || item.nombreejercicio || item.NombreEjercicio;
+                            const setsJ = item.setsjson || item.SetsJson;
+
+                            if (!formattedRoutines[dia]) {
+                                formattedRoutines[dia] = [];
+                            }
+                            formattedRoutines[dia].push({
+                                dbId: idReg,
+                                id: idReg,
+                                name: nombreEj,
+                                expanded: false,
+                                sets: typeof setsJ === 'string' ? JSON.parse(setsJ) : (setsJ || [])
+                            });
+                        });
+                        setRoutines(formattedRoutines);
+                    })
+                    .catch(err => console.error("Error al cargar rutinas:", err));
+
+                fetch(`http://localhost:3000/api/asistencia?usuarioId=${usuario.Id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const attMap = {};
+                        data.forEach(item => {
+                            const fechaVal = item.fecha || item.Fecha;
+                            if(fechaVal) {
+                                const fechaStr = fechaVal.split('T')[0];
+                                attMap[fechaStr] = true;
+                            }
+                        });
+                        setAttendance(attMap);
+                    })
+                    .catch(err => console.error("Error al cargar asistencia:", err));
+            };
+
+            useEffect(() => {
+                cargarDatos();
+            }, []);
+
+            const activeRoutine = routines[currentDay] || [];
+
+            const registrarHistorialAutomatico = (nombreEjercicio, sets) => {
+                const maxPeso = Math.max(...sets.map(s => Number(s.weight) || 0));
+                if (maxPeso <= 0) return;
+
+                const now = new Date();
+                const fechaHoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                fetch('http://localhost:3000/api/historial-cargas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuarioId: usuario.Id,
+                        fecha: fechaHoy,
+                        ejercicio: nombreEjercicio,
+                        pesoMaximo: maxPeso
+                    })
+                }).catch(err => console.error("Error al registrar historial automático:", err));
+            };
+
+            const toggleExpand = (exId) => {
+                setRoutines(prev => ({
+                    ...prev,
+                    [currentDay]: (prev[currentDay] || []).map(ex => ex.id === exId ? { ...ex, expanded: !ex.expanded } : ex)
+                }));
+            };
+
+            const addSet = (exId) => {
+                setRoutines(prev => {
+                    const currentList = prev[currentDay] || [];
+                    const updatedList = currentList.map(ex => {
+                        if (ex.id === exId) {
+                            const lastSet = ex.sets[ex.sets.length - 1] || { reps: 10, weight: 0 };
+                            const updatedSets = [...ex.sets, { ...lastSet }];
+                            
+                            fetch(`http://localhost:3000/api/rutinas/${ex.dbId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ setsJson: JSON.stringify(updatedSets) })
+                            }).catch(err => console.error(err));
+
+                            registrarHistorialAutomatico(ex.name, updatedSets);
+
+                            return { ...ex, sets: updatedSets };
+                        }
+                        return ex;
+                    });
+                    return { ...prev, [currentDay]: updatedList };
+                });
+            };
+
+            const removeSet = (exId, setIndex) => {
+                setRoutines(prev => {
+                    const currentList = prev[currentDay] || [];
+                    const updatedList = currentList.map(ex => {
+                        if (ex.id === exId) {
+                            const updatedSets = ex.sets.filter((_, idx) => idx !== setIndex);
+                            
+                            fetch(`http://localhost:3000/api/rutinas/${ex.dbId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ setsJson: JSON.stringify(updatedSets) })
+                            }).catch(err => console.error(err));
+
+                            registrarHistorialAutomatico(ex.name, updatedSets);
+
+                            return { ...ex, sets: updatedSets };
+                        }
+                        return ex;
+                    });
+                    return { ...prev, [currentDay]: updatedList };
+                });
+            };
+
+            const updateSet = (exId, setIndex, field, value) => {
+                setRoutines(prev => {
+                    const currentList = prev[currentDay] || [];
+                    const updatedList = currentList.map(ex => {
+                        if (ex.id === exId) {
+                            const newSets = ex.sets.map((s, idx) => {
+                                if (idx === setIndex) {
+                                    return { ...s, [field]: value === '' ? '' : Number(value) };
+                                }
+                                return s;
+                            });
+
+                            fetch(`http://localhost:3000/api/rutinas/${ex.dbId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ setsJson: JSON.stringify(newSets) })
+                            }).catch(err => console.error("Error al actualizar set:", err));
+
+                            if (field === 'weight') {
+                                registrarHistorialAutomatico(ex.name, newSets);
+                            }
+
+                            return { ...ex, sets: newSets };
+                        }
+                        return ex;
+                    });
+                    return { ...prev, [currentDay]: updatedList };
+                });
+            };
+
+            const agregarEjercicioDirecto = (exerciseName) => {
+                const initialSets = [{ reps: 10, weight: 0 }];
+                fetch('http://localhost:3000/api/rutinas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuarioId: usuario.Id,
+                        diaSemana: currentDay,
+                        ejercicio: exerciseName,
+                        setsJson: JSON.stringify(initialSets)
+                    })
+                })
+                .then(res => res.json())
+                .then(() => {
+                    setIsAddingDB(false);
+                    setBusquedaEjercicio('');
+                    cargarDatos();
+                })
+                .catch(err => console.error("Error al guardar ejercicio:", err));
+            };
+
+            const removeExercise = (dbId) => {
+                fetch(`http://localhost:3000/api/rutinas/${dbId}`, { method: 'DELETE' })
+                    .then(() => {
+                        setRoutines(prev => ({
+                            ...prev,
+                            [currentDay]: (prev[currentDay] || []).filter(ex => ex.dbId !== dbId)
+                        }));
+                    })
+                    .catch(err => console.error("Error al eliminar ejercicio:", err));
+            };
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; 
+            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+            const toggleAttendanceDay = (dayNum) => {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                const nuevoEstado = !attendance[dateKey];
+
+                setAttendance(prev => ({ ...prev, [dateKey]: nuevoEstado }));
+
+                fetch('http://localhost:3000/api/asistencia', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuarioId: usuario.Id, fecha: dateKey, asistio: nuevoEstado })
+                }).catch(err => console.error("Error al actualizar asistencia:", err));
+            };
+
+            let listaFiltrada = [];
+            if (busquedaEjercicio.trim() !== '') {
+                Object.entries(exerciseDatabase).forEach(([muscle, lista]) => {
+                    lista.filter(ex => ex.toLowerCase().includes(busquedaEjercicio.toLowerCase())).forEach(ex => {
+                        listaFiltrada.push({ muscle, ex });
+                    });
+                });
+            } else if (selectedMuscleGroup && exerciseDatabase[selectedMuscleGroup]) {
+                exerciseDatabase[selectedMuscleGroup].forEach(ex => {
+                    listaFiltrada.push({ muscle: selectedMuscleGroup, ex });
+                });
+            }
+
+            return (
+                <div className="space-y-6 pb-20">
+                    <div className="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden">
+                        <div 
+                            onClick={() => setIsConfigOpen(!isConfigOpen)}
+                            className="p-4 flex justify-between items-center cursor-pointer bg-slate-800 hover:bg-slate-750 transition-colors"
+                        >
+                            <div className="flex items-center space-x-3">
+                                <div className="bg-emerald-500/10 text-emerald-400 p-2 rounded-lg"><Icons.Settings /></div>
+                                <div>
+                                    <h2 className="text-base font-bold text-white">Configuración Semanal</h2>
+                                    <p className="text-xs text-slate-400">{trainingDays} días de entrenamiento configurados</p>
+                                </div>
+                            </div>
+                            <div className={`transform transition-transform ${isConfigOpen ? 'rotate-180' : ''} text-slate-400`}><Icons.ChevronDown /></div>
+                        </div>
+
+                        {isConfigOpen && (
+                            <div className="p-4 bg-slate-900/60 border-t border-slate-700">
+                                <div className="flex items-center space-x-3 bg-slate-900 p-3 rounded-xl border border-slate-700">
+                                    <label className="text-sm font-medium text-slate-300 w-full">¿Cuántos días vas a ir al gym?</label>
+                                    <select 
+                                        value={trainingDays} 
+                                        onChange={(e) => {
+                                            setTrainingDays(Number(e.target.value));
+                                            if (currentDay > Number(e.target.value)) setCurrentDay(1);
+                                        }}
+                                        className="bg-slate-800 text-white p-2 rounded outline-none border border-slate-600 focus:border-emerald-500 font-bold"
+                                    >
+                                        {[1,2,3,4,5,6,7].map(num => <option key={num} value={num}>{num} Días</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-2">
+                                <div className="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg"><Icons.Calendar /></div>
+                                <h3 className="font-bold text-white text-sm">Asistencia: {monthNames[month]} {year}</h3>
+                            </div>
+                            <span className="text-xs text-slate-400">Toca para marcar</span>
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1.5 text-center">
+                            {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map((d, i) => <span key={i} className="text-[10px] font-bold text-slate-500 mb-1">{d}</span>)}
+                            
+                            {Array.from({length: firstDayIndex}, (_, i) => <div key={`empty-${i}`} />)}
+
+                            {Array.from({length: daysInMonth}, (_, i) => i + 1).map(dayNum => {
+                                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                                const isChecked = !!attendance[dateKey];
+
+                                return (
+                                    <button
+                                        key={dayNum}
+                                        type="button"
+                                        onClick={() => toggleAttendanceDay(dayNum)}
+                                        className={`h-9 rounded-xl flex flex-col items-center justify-center text-xs font-bold transition-all border cursor-pointer ${
+                                            isChecked 
+                                                ? 'bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-500/25' 
+                                                : 'bg-slate-900 text-slate-400 border-slate-700 hover:border-slate-500'
+                                        }`}
+                                    >
+                                        <span>{dayNum}</span>
+                                        {isChecked && <span className="scale-75 text-white"><Icons.Check /></span>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Tus Días de Rutina</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {Array.from({length: trainingDays}, (_, i) => i + 1).map(day => (
+                                <div
+                                    key={day}
+                                    onClick={() => setCurrentDay(day)}
+                                    className={`p-4 rounded-2xl flex flex-col justify-between transition-all duration-300 shadow-lg border cursor-pointer ${
+                                        currentDay === day 
+                                            ? 'bg-emerald-600 text-white border-emerald-400 scale-[1.02] shadow-emerald-500/30' 
+                                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
+                                    }`}
+                                >
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs uppercase font-bold tracking-wider opacity-90">Día {day}</span>
+                                        <span className="text-[10px] bg-black/30 px-2 py-0.5 rounded-full">{(routines[day] || []).length} ejerc.</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center space-x-1">
+                                        <input 
+                                            type="text" 
+                                            value={nombresDias[day] || ''} 
+                                            onChange={(e) => setNombresDias({ ...nombresDias, [day]: e.target.value })}
+                                            onClick={(e) => e.stopPropagation()}
+                                            placeholder="Nombre..."
+                                            className="w-full bg-black/20 text-white font-bold text-sm px-2 py-1 rounded outline-none border border-white/20 focus:border-white text-center"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-white mt-4 border-b border-slate-700 pb-2 flex justify-between items-center">
+                        <span>Rutina: Día {currentDay} ({nombresDias[currentDay] || 'Sin Nombre'})</span>
+                        <span className="text-xs text-emerald-400 font-normal">{activeRoutine.length} ejercicios</span>
+                    </h3>
+
+                    <div className="space-y-4">
+                        {activeRoutine.length === 0 ? (
+                            <div className="text-center py-10 bg-slate-800 rounded-2xl border border-slate-700 border-dashed">
+                                <p className="text-slate-400 text-sm">No hay ejercicios guardados en este día.</p>
+                            </div>
+                        ) : (
+                            activeRoutine.map(exercise => (
+                                <div key={exercise.dbId} className="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden">
+                                    <div 
+                                        className="p-4 flex justify-between items-center cursor-pointer bg-slate-800 hover:bg-slate-750 transition-colors"
+                                        onClick={() => toggleExpand(exercise.id)}
+                                    >
+                                        <h3 className="font-bold text-white text-base">{exercise.name}</h3>
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-xs bg-slate-700 text-emerald-400 px-2 py-1 rounded-full font-medium">{exercise.sets.length} series</span>
+                                            <div className={`transform transition-transform ${exercise.expanded ? 'rotate-180' : ''} text-slate-400`}><Icons.ChevronDown /></div>
+                                        </div>
+                                    </div>
+                                    
+                                    {exercise.expanded && (
+                                        <div className="p-4 bg-slate-900/50 border-t border-slate-700">
+                                            <div className="grid grid-cols-12 gap-2 mb-2 text-xs font-semibold text-slate-400 text-center px-1">
+                                                <div className="col-span-2">SET</div>
+                                                <div className="col-span-4">KG</div>
+                                                <div className="col-span-4">REPS</div>
+                                                <div className="col-span-2"></div>
+                                            </div>
+                                            
+                                            {exercise.sets.map((set, idx) => (
+                                                <div key={`set-${idx}`} className="grid grid-cols-12 gap-2 items-center mb-3">
+                                                    <div className="col-span-2 text-center text-slate-500 font-bold bg-slate-800 py-2 rounded-lg text-sm">{idx + 1}</div>
+                                                    <div className="col-span-4">
+                                                        <input 
+                                                            type="number" 
+                                                            value={set.weight} 
+                                                            onChange={(e) => updateSet(exercise.id, idx, 'weight', e.target.value)}
+                                                            className="w-full bg-slate-800 text-white text-center py-2 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 border border-slate-700 font-bold"
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-4">
+                                                        <input 
+                                                            type="number" 
+                                                            value={set.reps} 
+                                                            onChange={(e) => updateSet(exercise.id, idx, 'reps', e.target.value)}
+                                                            className="w-full bg-slate-800 text-white text-center py-2 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 border border-slate-700 font-bold"
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-2 flex justify-center">
+                                                        <button onClick={() => removeSet(exercise.id, idx)} className="text-red-400 hover:text-red-300 p-2 bg-red-400/10 rounded-lg"><Icons.Trash2 /></button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="flex space-x-2 mt-4">
+                                                <button onClick={() => addSet(exercise.id)} className="flex-1 py-2 rounded-xl text-sm font-bold bg-slate-700 text-white hover:bg-slate-650 transition-colors">+ Añadir Serie</button>
+                                                <button onClick={() => removeExercise(exercise.dbId)} className="py-2 px-4 rounded-xl text-sm font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors border border-red-500/30">Eliminar</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <button 
+                        onClick={() => setIsAddingDB(true)}
+                        className="w-full bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition-colors flex justify-center items-center space-x-2 border border-emerald-400 mt-6 cursor-pointer"
+                    >
+                        <Icons.Plus />
+                        <span>Explorar Base de Ejercicios del Gym</span>
+                    </button>
+
+                    {isAddingDB && (
+                        <div className="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700 mt-4 space-y-4">
+                            <h3 className="text-white font-bold flex items-center justify-between">
+                                <span className="flex items-center"><Icons.Dumbbell /> <span className="ml-2">Selecciona un Músculo o Busca</span></span>
+                                <button onClick={() => setIsAddingDB(false)} className="text-xs text-slate-400 hover:text-white cursor-pointer">Cerrar</button>
+                            </h3>
+
+                            <input 
+                                type="text"
+                                placeholder="Busca un ejercicio..."
+                                value={busquedaEjercicio}
+                                onChange={(e) => setBusquedaEjercicio(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                            />
+                            
+                            {!busquedaEjercicio && (
+                                <div className="flex flex-wrap gap-2">
+                                    {Object.keys(exerciseDatabase).map(muscle => (
+                                        <button
+                                            key={muscle}
+                                            onClick={() => setSelectedMuscleGroup(muscle)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                                                selectedMuscleGroup === muscle ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                            }`}
+                                        >
+                                            {muscle}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="space-y-2 max-h-72 overflow-y-auto pr-2 hide-scrollbar">
+                                {listaFiltrada.length === 0 ? (
+                                    <p className="text-xs text-slate-400 text-center py-4">No se encontraron ejercicios.</p>
+                                ) : (
+                                    listaFiltrada.map((item, idx) => (
+                                        <div
+                                            key={idx}
+                                            onClick={() => agregarEjercicioDirecto(item.ex)}
+                                            className="w-full text-left p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500 text-sm text-white font-medium flex justify-between items-center group transition-colors cursor-pointer"
+                                        >
+                                            <div>
+                                                <span>{item.ex}</span>
+                                                <span className="block text-[10px] text-emerald-400">{item.muscle}</span>
+                                            </div>
+                                            <span className="bg-emerald-500/20 text-emerald-400 p-2 rounded-lg"><Icons.Plus /></span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const NutritionTab = ({ usuario }) => {
+            const [peso, setPeso] = useState(usuario.Peso || 75);
+            const [altura, setAltura] = useState(usuario.Altura || 175);
+            const [edad, setEdad] = useState(usuario.Edad || 20);
+            const [actividad, setActividad] = useState(usuario.Actividad || 1.55);
+            const [objetivo, setObjetivo] = useState(usuario.Objetivo || 'mantenimiento');
+            
+            const [busqueda, setBusqueda] = useState('');
+            const [alimentos, setAlimentos] = useState([]);
+            const [cargando, setCargando] = useState(false);
+            
+            const [cantidadesInputs, setCantidadesInputs] = useState({});
+            const [tiposUnidad, setTiposUnidad] = useState({});
+            const [alimentosConsumidos, setAlimentosConsumidos] = useState([]);
+
+            const now = new Date();
+            const fechaHoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const cargarConsumo = () => {
+                fetch(`http://localhost:3000/api/consumo?usuarioId=${usuario.Id}&fecha=${fechaHoy}`)
+                    .then(res => res.json())
+                    .then(data => setAlimentosConsumidos(data))
+                    .catch(err => console.error("Error al cargar consumo:", err));
+            };
+
+            useEffect(() => {
+                cargarConsumo();
+            }, []);
+
+            const guardarPerfil = () => {
+                fetch(`http://localhost:3000/api/usuario/${usuario.Id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ peso, altura, edad, actividad, objetivo })
+                }).catch(err => console.error("Error al actualizar perfil:", err));
+            };
+
+            const tmb = (10 * peso) + (6.25 * altura) - (5 * edad) + 5;
+            const mantenimiento = Math.round(tmb * actividad);
+
+            const getCaloriasMeta = () => {
+                if (objetivo === 'volumen') return mantenimiento + 300;
+                if (objetivo === 'definicion') return mantenimiento - 400;
+                return mantenimiento;
+            };
+
+            const caloriasMeta = getCaloriasMeta();
+            const proteinasMeta = Math.round(peso * 2.0);
+            const grasasMeta = Math.round((caloriasMeta * 0.25) / 9);
+            const carbosMeta = Math.round((caloriasMeta - (proteinasMeta * 4) - (grasasMeta * 9)) / 4);
+
+            const buscarAlimentos = (termino) => {
+                setBusqueda(termino);
+                if (termino.trim() === '') {
+                    setAlimentos([]);
+                    return;
+                }
+
+                setCargando(true);
+                fetch(`http://localhost:3000/api/alimentos?buscar=${termino}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        setAlimentos(data);
+                        const initialCant = {};
+                        const initialUnidad = {};
+                        data.forEach(item => {
+                            const itemId = item.id || item.Id;
+                            initialCant[itemId] = 100;
+                            initialUnidad[itemId] = 'g';
+                        });
+                        setCantidadesInputs(initialCant);
+                        setTiposUnidad(initialUnidad);
+                        setCargando(false);
+                    })
+                    .catch(err => {
+                        console.error("Error al buscar alimentos:", err);
+                        setCargando(false);
+                    });
+            };
+
+            const handleCantidadChange = (id, valor) => {
+                setCantidadesInputs({ ...cantidadesInputs, [id]: valor === '' ? '' : Number(valor) });
+            };
+
+            const handleUnidadChange = (id, unidad) => {
+                setTiposUnidad({ ...tiposUnidad, [id]: unidad });
+            };
+
+            const calcularFactorYDetalle = (id, item) => {
+                const cant = Number(cantidadesInputs[id]) || 0;
+                const unidad = tiposUnidad[id] || 'g';
+
+                let gramosEquivalentes = cant;
+                let textoMedida = `${cant}g`;
+
+                if (unidad === 'vasos') {
+                    gramosEquivalentes = cant * 250;
+                    textoMedida = `${cant} vaso${cant !== 1 ? 's' : ''} (${gramosEquivalentes} ml)`;
+                } else if (unidad === 'cucharadas') {
+                    gramosEquivalentes = cant * 15;
+                    textoMedida = `${cant} cda${cant !== 1 ? 's' : ''} (${gramosEquivalentes} ml)`;
+                } else {
+                    textoMedida = `${cant}g`;
+                }
+
+                const factor = gramosEquivalentes / 100;
+                const calVal = item.calorias !== undefined ? item.calorias : item.Calorias;
+                const protVal = item.proteinas !== undefined ? item.proteinas : item.Proteinas;
+                const carbVal = item.carbohidratos !== undefined ? item.carbohidratos : item.Carbohidratos;
+                const grasVal = item.grasas !== undefined ? item.grasas : item.Grasas;
+
+                return {
+                    factor,
+                    textoMedida,
+                    calorias: Math.round(calVal * factor),
+                    proteinas: Number((protVal * factor).toFixed(1)),
+                    carbohidratos: Number((carbVal * factor).toFixed(1)),
+                    grasas: Number((grasVal * factor).toFixed(1))
+                };
+            };
+
+            const agregarAlConsumo = (item) => {
+                const itemId = item.id || item.Id;
+                const nomVal = item.nombre || item.Nombre;
+                const calculo = calcularFactorYDetalle(itemId, item);
+                const nuevoConsumo = {
+                    usuarioId: usuario.Id,
+                    fecha: fechaHoy,
+                    nombre: nomVal,
+                    medidaTexto: calculo.textoMedida,
+                    calorias: calculo.calorias,
+                    proteinas: calculo.proteinas,
+                    carbohidratos: calculo.carbohidratos,
+                    grasas: calculo.grasas
+                };
+
+                fetch('http://localhost:3000/api/consumo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nuevoConsumo)
+                })
+                .then(res => res.json())
+                .then(() => {
+                    cargarConsumo();
+                })
+                .catch(err => console.error("Error al guardar consumo:", err));
+            };
+
+            const eliminarDelConsumo = (id) => {
+                fetch(`http://localhost:3000/api/consumo/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(res => res.json())
+                .then(() => {
+                    cargarConsumo();
+                })
+                .catch(err => console.error("Error al eliminar consumo:", err));
+            };
+
+            const totalCalorias = alimentosConsumidos.reduce((acc, curr) => acc + (curr.calorias !== undefined ? curr.calorias : curr.Calorias || 0), 0);
+            const totalProteinas = alimentosConsumidos.reduce((acc, curr) => acc + (curr.proteinas !== undefined ? curr.proteinas : curr.Proteinas || 0), 0);
+            const totalCarbos = alimentosConsumidos.reduce((acc, curr) => acc + (curr.carbohidratos !== undefined ? curr.carbohidratos : curr.Carbohidratos || 0), 0);
+            const totalGrasas = alimentosConsumidos.reduce((acc, curr) => acc + (curr.grasas !== undefined ? curr.grasas : curr.Grasas || 0), 0);
+
+            return (
+                <div className="space-y-6 pb-20">
+                    <div className="bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-700">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <div className="text-emerald-500 bg-emerald-500/10 p-3 rounded-full"><Icons.Apple /></div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Calculadora Nutricional</h2>
+                                <p className="text-slate-400 text-sm">Basado en tus datos y nivel de actividad</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Peso (kg)</label>
+                                <input type="number" value={peso} onChange={(e) => { setPeso(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Altura (cm)</label>
+                                <input type="number" value={altura} onChange={(e) => { setAltura(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 block mb-1">Edad</label>
+                                <input type="number" value={edad} onChange={(e) => { setEdad(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
+                            </div>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="text-xs text-slate-400 block mb-1">Nivel de Actividad Física</label>
+                            <select value={actividad} onChange={(e) => { setActividad(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white text-sm font-bold focus:border-emerald-500 outline-none">
+                                <option value={1.2}>Sedentario (poco o nada ejercicio)</option>
+                                <option value={1.375}>Ligero (ejercicio 1-3 días/sem)</option>
+                                <option value={1.55}>Moderado (ejercicio 3-5 días/sem)</option>
+                                <option value={1.725}>Intenso (ejercicio 6-7 días/sem)</option>
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                            <button onClick={() => { setObjetivo('definicion'); guardarPerfil(); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'definicion' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Definición</button>
+                            <button onClick={() => { setObjetivo('mantenimiento'); guardarPerfil(); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'mantenimiento' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Mantenimiento</button>
+                            <button onClick={() => { setObjetivo('volumen'); guardarPerfil(); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'volumen' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Volumen</button>
+                        </div>
+
+                        <div className="p-4 bg-slate-900/90 rounded-xl border border-slate-700 text-center mb-4">
+                            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Meta Diaria Recomendada</span>
+                            <p className="text-3xl font-black text-emerald-400 mt-1">{caloriasMeta} <span className="text-sm font-normal text-slate-400">kcal</span></p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-700"><span className="text-[10px] text-slate-400">Proteínas</span><p className="text-sm font-bold text-blue-400">{proteinasMeta}g</p></div>
+                            <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-700"><span className="text-[10px] text-slate-400">Carbohidratos</span><p className="text-sm font-bold text-amber-400">{carbosMeta}g</p></div>
+                            <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-700"><span className="text-[10px] text-slate-400">Grasas</span><p className="text-sm font-bold text-rose-400">{grasasMeta}g</p></div>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-700">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <div className="text-emerald-500 bg-emerald-500/10 p-3 rounded-full"><Icons.Utensils /></div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Registro Nutricional</h2>
+                                <p className="text-slate-400 text-sm">Busca alimentos en la base de datos</p>
+                            </div>
+                        </div>
+
+                        <div className="relative mb-4">
+                            <input type="text" placeholder="Escribe un alimento (ej. Asado, Alfajor, Arroz...)" value={busqueda} onChange={(e) => buscarAlimentos(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"/>
+                        </div>
+
+                        {cargando && <p className="text-xs text-slate-400 text-center py-2">Buscando en la base de datos...</p>}
+
+                        {alimentos.length > 0 && (
+                            <div className="max-h-72 overflow-y-auto space-y-3 mb-6 bg-slate-900/80 p-2 rounded-xl border border-slate-700">
+                                {alimentos.map((item) => {
+                                    const itemId = item.id || item.Id;
+                                    const nomVal = item.nombre || item.Nombre;
+                                    const calVal = item.calorias !== undefined ? item.calorias : item.Calorias;
+                                    const protVal = item.proteinas !== undefined ? item.proteinas : item.Proteinas;
+                                    const carbVal = item.carbohidratos !== undefined ? item.carbohidratos : item.Carbohidratos;
+                                    const grasVal = item.grasas !== undefined ? item.grasas : item.Grasas;
+
+                                    const cant = cantidadesInputs[itemId] !== undefined ? cantidadesInputs[itemId] : 100;
+                                    const unidad = tiposUnidad[itemId] || 'g';
+                                    const calc = calcularFactorYDetalle(itemId, item);
+
+                                    return (
+                                        <div key={itemId} className="p-3 bg-slate-800 rounded-xl border border-slate-700 space-y-3">
+                                            <div>
+                                                <h4 className="text-white font-bold text-sm">{nomVal}</h4>
+                                                <p className="text-[10px] text-slate-400">Base 100g/ml: {calVal} kcal | P: {protVal}g | C: {carbVal}g | G: {grasVal}g</p>
+                                            </div>
+
+                                            <div className="grid grid-cols-12 gap-2 items-center pt-2 border-t border-slate-700/60">
+                                                <div className="col-span-4"><input type="number" value={cant} onChange={(e) => handleCantidadChange(itemId, e.target.value)} className="w-full bg-slate-900 text-white font-bold text-center py-1.5 rounded-lg border border-slate-600 focus:border-emerald-500 outline-none text-sm"/></div>
+                                                <div className="col-span-4">
+                                                    <select value={unidad} onChange={(e) => handleUnidadChange(itemId, e.target.value)} className="w-full bg-slate-900 text-emerald-400 font-bold text-xs py-2 px-1 rounded-lg border border-slate-600 outline-none">
+                                                        <option value="g">Gramos (g)</option>
+                                                        <option value="vasos">Vasos</option>
+                                                        <option value="cucharadas">Cucharadas</option>
+                                                    </select>
+                                                </div>
+                                                <div className="col-span-4 text-right">
+                                                    <span className="text-xs font-bold text-emerald-400 block">{calc.calorias} kcal</span>
+                                                    <button onClick={() => agregarAlConsumo(item)} className="w-full mt-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] py-1.5 rounded-lg font-bold">+ Agregar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        <div className="mt-6 border-t border-slate-700 pt-4">
+                            <h3 className="text-white font-bold mb-3">Consumo de Hoy</h3>
+                            
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 text-center"><span className="text-xs text-slate-400">Calorías Totales</span><p className="text-xl font-bold text-emerald-400">{Math.round(totalCalorias)} <span className="text-xs text-slate-400">/ {caloriasMeta}</span></p></div>
+                                <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 text-center"><span className="text-xs text-slate-400">Proteínas Totales</span><p className="text-xl font-bold text-blue-400">{totalProteinas.toFixed(1)}g <span className="text-xs text-slate-400">/ {proteinasMeta}g</span></p></div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-700 text-center"><span className="text-xs text-slate-400">Carbohidratos</span><p className="text-base font-bold text-amber-400">{totalCarbos.toFixed(1)}g <span className="text-xs text-slate-400">/ {carbosMeta}g</span></p></div>
+                                <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-700 text-center"><span className="text-xs text-slate-400">Grasas</span><p className="text-base font-bold text-rose-400">{totalGrasas.toFixed(1)}g <span className="text-xs text-slate-400">/ {grasasMeta}g</span></p></div>
+                            </div>
+
+                            <div className="space-y-2">
+                                {alimentosConsumidos.length === 0 ? (
+                                    <p className="text-xs text-slate-500 text-center py-2">No has agregado alimentos hoy.</p>
+                                ) : (
+                                    alimentosConsumidos.map((consumido) => {
+                                        const cId = consumido.id || consumido.Id;
+                                        const cNom = consumido.nombre || consumido.Nombre;
+                                        const cMed = consumido.medidatexto || consumido.MedidaTexto;
+                                        const cCal = consumido.calorias !== undefined ? consumido.calorias : consumido.Calorias;
+                                        const cPro = consumido.proteinas !== undefined ? consumido.proteinas : consumido.Proteinas;
+                                        const cCar = consumido.carbohidratos !== undefined ? consumido.carbohidratos : consumido.Carbohidratos;
+                                        const cGra = consumido.grasas !== undefined ? consumido.grasas : consumido.Grasas;
+
+                                        return (
+                                            <div key={cId} className="flex justify-between items-center bg-slate-900 p-3 rounded-xl text-xs border border-slate-700/50">
+                                                <div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <span className="text-white font-bold">{cNom}</span>
+                                                        <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-semibold">({cMed})</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-400 mt-1">{cCal} kcal | P: {cPro}g | C: {cCar}g | G: {cGra}g</p>
+                                                </div>
+                                                <button onClick={() => eliminarDelConsumo(cId)} className="text-red-400 hover:text-red-300 p-2 bg-red-400/10 rounded-lg"><Icons.Trash2 /></button>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ProgressTab = ({ usuario }) => {
+            const [routines, setRoutines] = useState({});
+            const [selectedDay, setSelectedDay] = useState(1);
+            const [selectedExercise, setSelectedExercise] = useState('');
+            const [historialData, setHistorialData] = useState([]);
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                fetch(`http://localhost:3000/api/rutinas?usuarioId=${usuario.Id}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const formattedRoutines = {};
+                        data.forEach(item => {
+                            const dia = item.diasemana || item.DiaSemana;
+                            const nombreEj = item.nombreep || item.nombreejercicio || item.NombreEjercicio;
+                            if (!formattedRoutines[dia]) {
+                                formattedRoutines[dia] = [];
+                            }
+                            formattedRoutines[dia].push(nombreEj);
+                        });
+                        setRoutines(formattedRoutines);
+
+                        if (formattedRoutines[1] && formattedRoutines[1].length > 0) {
+                            setSelectedExercise(formattedRoutines[1][0]);
+                        }
+                    })
+                    .catch(err => console.error("Error al cargar rutinas en progreso:", err));
+            }, []);
+
+            const handleDayChange = (day) => {
+                setSelectedDay(day);
+                const ejerciciosDelDia = routines[day] || [];
+                if (ejerciciosDelDia.length > 0) {
+                    setSelectedExercise(ejerciciosDelDia[0]);
+                } else {
+                    setSelectedExercise('');
+                }
+            };
+
+            const cargarHistorial = () => {
+                if (!selectedExercise) {
+                    setHistorialData([]);
+                    return;
+                }
+                fetch(`http://localhost:3000/api/historial-cargas?usuarioId=${usuario.Id}&ejercicio=${encodeURIComponent(selectedExercise)}`)
+                    .then(res => res.json())
+                    .then(data => setHistorialData(data))
+                    .catch(err => console.error("Error al cargar historial:", err));
+            };
+
+            useEffect(() => {
+                cargarHistorial();
+            }, [selectedExercise]);
+
+            useEffect(() => {
+                if (chartRef.current) {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+
+                    const labels = historialData.map(item => (item.fecha || item.Fecha).split('T')[0]);
+                    const pesos = historialData.map(item => item.pesomaximo !== undefined ? item.pesomaximo : item.PesoMaximo);
+
+                    chartInstance.current = new Chart(chartRef.current, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Peso Máximo del Día (kg)',
+                                data: pesos,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0,
+                                pointBackgroundColor: '#10b981',
+                                pointBorderColor: '#ffffff',
+                                pointRadius: 6,
+                                pointHoverRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                                y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                            }
+                        }
+                    });
+                }
+            }, [historialData]);
+
+            const diasDisponibles = Object.keys(routines);
+            const ejerciciosDelDiaActual = routines[selectedDay] || [];
+
+            return (
+                <div className="space-y-6 pb-20">
+                    <div className="bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-700">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <div className="text-emerald-500 bg-emerald-500/10 p-3 rounded-full"><Icons.TrendingUp /></div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Evolución de Cargas</h2>
+                                <p className="text-slate-400 text-sm">Polígono de frecuencias por sesión de entrenamiento</p>
+                            </div>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="text-xs text-slate-400 block mb-1">Seleccionar Día de Rutina</label>
+                            <div className="flex flex-wrap gap-2">
+                                {diasDisponibles.length === 0 ? (
+                                    <p className="text-xs text-slate-500">No hay rutinas creadas todavía.</p>
+                                ) : (
+                                    diasDisponibles.map(dia => (
+                                        <button
+                                            key={dia}
+                                            onClick={() => handleDayChange(Number(dia))}
+                                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                                selectedDay === Number(dia)
+                                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+                                                    : 'bg-slate-900 text-slate-400 border border-slate-700 hover:border-slate-500'
+                                            }`}
+                                        >
+                                            Día {dia}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mb-6">
+                            <label className="text-xs text-slate-400 block mb-1">Seleccionar Ejercicio</label>
+                            <select 
+                                value={selectedExercise} 
+                                onChange={(e) => setSelectedExercise(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white text-sm font-bold focus:border-emerald-500 outline-none"
+                            >
+                                {ejerciciosDelDiaActual.length === 0 ? (
+                                    <option value="">No hay ejercicios en este día</option>
+                                ) : (
+                                    ejerciciosDelDiaActual.map((ejer, idx) => (
+                                        <option key={idx} value={ejer}>{ejer}</option>
+                                    ))
+                                )}
+                            </select>
+                        </div>
+
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-700">
+                            {!selectedExercise || historialData.length === 0 ? (
+                                <p className="text-center text-slate-500 py-10 text-xs">Entrená y anotá tus pesos en la rutina para ver tu polígono de frecuencias.</p>
+                            ) : (
+                                <canvas ref={chartRef}></canvas>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [usuario, setUsuario] = useState(() => {
+                const savedUser = localStorage.getItem('fitpro_usuario');
+                return savedUser ? JSON.parse(savedUser) : null;
+            });
+            const [pantallaAuth, setPantallaAuth] = useState('login');
+            const [nombreInput, setNombreInput] = useState('');
+            const [passwordInput, setPasswordInput] = useState('');
+            const [activeTab, setActiveTab] = useState('training');
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                try {
+                    const res = await fetch('http://localhost:3000/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre: nombreInput, password: passwordInput })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setUsuario(data.usuario);
+                        localStorage.setItem('fitpro_usuario', JSON.stringify(data.usuario));
+                    } else {
+                        alert(data.error || 'Credenciales inválidas.');
+                    }
+                } catch (err) {
+                    console.error("Error en login:", err);
+                    alert("No se pudo conectar con el servidor.");
+                }
+            };
+
+            const handleRegister = async (e) => {
+                e.preventDefault();
+                try {
+                    const res = await fetch('http://localhost:3000/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nombre: nombreInput, password: passwordInput })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert('¡Registrado con éxito! Ahora inicia sesión.');
+                        setPantallaAuth('login');
+                        setNombreInput(''); setPasswordInput('');
+                    } else {
+                        alert(data.error || 'Error al registrarse.');
+                    }
+                } catch (err) {
+                    console.error("Error en registro:", err);
+                    alert("No se pudo conectar con el servidor.");
+                }
+            };
+
+            const handleLogout = () => {
+                setUsuario(null);
+                localStorage.removeItem('fitpro_usuario');
+            };
+
+            if (!usuario) {
+                return (
+                    <div className="flex flex-col items-center justify-center h-screen bg-slate-950 text-white p-4">
+                        <div className="w-full max-w-sm bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+                            <h1 className="text-2xl font-bold text-emerald-400 text-center">RUKO 🚀</h1>
+                            
+                            {pantallaAuth === 'login' ? (
+                                <form onSubmit={handleLogin} className="space-y-3">
+                                    <input type="text" placeholder="Tu Nombre" value={nombreInput} onChange={e => setNombreInput(e.target.value)} className="w-full bg-slate-800 p-3 rounded-lg border border-slate-700 text-sm outline-none focus:border-emerald-500" required />
+                                    <input type="password" placeholder="Contraseña" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-800 p-3 rounded-lg border border-slate-700 text-sm outline-none focus:border-emerald-500" required />
+                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold p-3 rounded-lg text-sm transition cursor-pointer">Iniciar Sesión</button>
+                                    <p className="text-xs text-center text-slate-400 cursor-pointer pt-2" onClick={() => { setPantallaAuth('registro'); setNombreInput(''); setPasswordInput(''); }}>¿No tenés cuenta? Registrate acá</p>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleRegister} className="space-y-3">
+                                    <input type="text" placeholder="Tu Nombre" value={nombreInput} onChange={e => setNombreInput(e.target.value)} className="w-full bg-slate-800 p-3 rounded-lg border border-slate-700 text-sm outline-none focus:border-emerald-500" required />
+                                    <input type="password" placeholder="Contraseña" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-800 p-3 rounded-lg border border-slate-700 text-sm outline-none focus:border-emerald-500" required />
+                                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 font-semibold p-3 rounded-lg text-sm transition cursor-pointer">Registrarse</button>
+                                    <p className="text-xs text-center text-slate-400 cursor-pointer pt-2" onClick={() => { setPantallaAuth('login'); setNombreInput(''); setPasswordInput(''); }}>¿Ya tenés cuenta? Iniciá sesión</p>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            const nombreUsuario = usuario.nombre || usuario.Nombre;
+
+            return (
+                <div className="min-h-screen bg-slate-900 font-sans">
+                    <div className="bg-slate-800 pt-6 pb-4 px-6 shadow-md border-b border-slate-700 sticky top-0 z-10">
+                        <div className="flex justify-between items-center">
+                            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 tracking-tight">RUKO</h1>
+                            <div className="flex items-center space-x-3">
+                                <span className="text-xs font-bold text-emerald-400">Hola, {nombreUsuario}</span>
+                                <button onClick={handleLogout} className="text-[10px] bg-red-500/20 text-red-400 px-2.5 py-1 rounded-lg border border-red-500/30 cursor-pointer hover:bg-red-500/30">Salir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 md:max-w-md md:mx-auto">
+                        {activeTab === 'training' && <TrainingTab usuario={usuario} />}
+                        {activeTab === 'nutrition' && <NutritionTab usuario={usuario} />}
+                        {activeTab === 'progress' && <ProgressTab usuario={usuario} />}
+                    </div>
+
+                    <div className="fixed bottom-0 w-full bg-slate-800/95 backdrop-blur-md border-t border-slate-700 pb-2 md:max-w-md md:left-1/2 md:-translate-x-1/2 rounded-t-3xl z-20">
+                        <div className="flex justify-around items-center p-3">
+                            <button onClick={() => setActiveTab('training')} className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors cursor-pointer ${activeTab === 'training' ? 'text-emerald-400' : 'text-slate-400'}`}><Icons.Dumbbell /><span className="text-[10px] font-medium">Rutina</span></button>
+                            <button onClick={() => setActiveTab('nutrition')} className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors cursor-pointer ${activeTab === 'nutrition' ? 'text-emerald-400' : 'text-slate-400'}`}><Icons.Apple /><span className="text-[10px] font-medium">Nutrición</span></button>
+                            <button onClick={() => setActiveTab('progress')} className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors cursor-pointer ${activeTab === 'progress' ? 'text-emerald-400' : 'text-slate-400'}`}><Icons.TrendingUp /><span className="text-[10px] font-medium">Progreso</span></button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            ReactDOM.createRoot(rootElement).render(<App />);
+        }
+    </script>
+</body>
+</html>
