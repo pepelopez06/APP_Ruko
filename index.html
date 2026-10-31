@@ -154,7 +154,12 @@
             const [isAddingDB, setIsAddingDB] = useState(false);
             const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("Pecho");
             const [busquedaEjercicio, setBusquedaEjercicio] = useState('');
-            const [attendance, setAttendance] = useState({});
+            
+            // Persistencia inmediata de asistencia en localStorage
+            const [attendance, setAttendance] = useState(() => {
+                const savedAtt = localStorage.getItem(`ruko_asistencia_${usuario.Id}`);
+                return savedAtt ? JSON.parse(savedAtt) : {};
+            });
 
             const cargarDatos = () => {
                 fetch(`/api/rutinas?usuarioId=${usuario.Id}`)
@@ -185,7 +190,7 @@
                 fetch(`/api/asistencia?usuarioId=${usuario.Id}`)
                     .then(res => res.json())
                     .then(data => {
-                        const attMap = {};
+                        const attMap = { ...attendance };
                         data.forEach(item => {
                             const fechaVal = item.fecha || item.Fecha;
                             if(fechaVal) {
@@ -194,6 +199,7 @@
                             }
                         });
                         setAttendance(attMap);
+                        localStorage.setItem(`ruko_asistencia_${usuario.Id}`, JSON.stringify(attMap));
                     })
                     .catch(err => console.error("Error al cargar asistencia:", err));
             };
@@ -350,7 +356,9 @@
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
                 const nuevoEstado = !attendance[dateKey];
 
-                setAttendance(prev => ({ ...prev, [dateKey]: nuevoEstado }));
+                const nuevoAttendance = { ...attendance, [dateKey]: nuevoEstado };
+                setAttendance(nuevoAttendance);
+                localStorage.setItem(`ruko_asistencia_${usuario.Id}`, JSON.stringify(nuevoAttendance));
 
                 fetch('/api/asistencia', {
                     method: 'POST',
@@ -614,7 +622,7 @@
             );
         };
 
-        const NutritionTab = ({ usuario }) => {
+        const NutritionTab = ({ usuario, setUsuario }) => {
             const [peso, setPeso] = useState(usuario.Peso || 75);
             const [altura, setAltura] = useState(usuario.Altura || 175);
             const [edad, setEdad] = useState(usuario.Edad || 20);
@@ -643,11 +651,22 @@
                 cargarConsumo();
             }, []);
 
-            const guardarPerfil = () => {
+            // Actualiza de forma persistente el perfil y el localStorage
+            const guardarPerfil = (nuevosValores = {}) => {
+                const p = nuevosValores.peso !== undefined ? nuevosValores.peso : peso;
+                const a = nuevosValores.altura !== undefined ? nuevosValores.altura : altura;
+                const e = nuevosValores.edad !== undefined ? nuevosValores.edad : edad;
+                const act = nuevosValores.actividad !== undefined ? nuevosValores.actividad : actividad;
+                const obj = nuevosValores.objetivo !== undefined ? nuevosValores.objetivo : objetivo;
+
+                const usuarioActualizado = { ...usuario, Peso: p, Altura: a, Edad: e, Actividad: act, Objetivo: obj };
+                localStorage.setItem('fitpro_usuario', JSON.stringify(usuarioActualizado));
+                if (setUsuario) setUsuario(usuarioActualizado);
+
                 fetch(`/api/usuario/${usuario.Id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ peso, altura, edad, actividad, objetivo })
+                    body: JSON.stringify({ peso: p, altura: a, edad: e, actividad: act, objetivo: obj })
                 }).catch(err => console.error("Error al actualizar perfil:", err));
             };
 
@@ -792,21 +811,21 @@
                         <div className="grid grid-cols-3 gap-3 mb-4">
                             <div>
                                 <label className="text-xs text-slate-400 block mb-1">Peso (kg)</label>
-                                <input type="number" value={peso} onChange={(e) => { setPeso(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
+                                <input type="number" value={peso} onChange={(e) => { const val = Number(e.target.value); setPeso(val); guardarPerfil({ peso: val }); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
                             </div>
                             <div>
                                 <label className="text-xs text-slate-400 block mb-1">Altura (cm)</label>
-                                <input type="number" value={altura} onChange={(e) => { setAltura(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
+                                <input type="number" value={altura} onChange={(e) => { const val = Number(e.target.value); setAltura(val); guardarPerfil({ altura: val }); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
                             </div>
                             <div>
                                 <label className="text-xs text-slate-400 block mb-1">Edad</label>
-                                <input type="number" value={edad} onChange={(e) => { setEdad(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
+                                <input type="number" value={edad} onChange={(e) => { const val = Number(e.target.value); setEdad(val); guardarPerfil({ edad: val }); }} className="w-full bg-slate-900 border border-slate-700 p-2 rounded-xl text-white font-bold text-center focus:border-emerald-500 outline-none"/>
                             </div>
                         </div>
 
                         <div className="mb-4">
                             <label className="text-xs text-slate-400 block mb-1">Nivel de Actividad Física</label>
-                            <select value={actividad} onChange={(e) => { setActividad(Number(e.target.value)); guardarPerfil(); }} className="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white text-sm font-bold focus:border-emerald-500 outline-none">
+                            <select value={actividad} onChange={(e) => { const val = Number(e.target.value); setActividad(val); guardarPerfil({ actividad: val }); }} className="w-full bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white text-sm font-bold focus:border-emerald-500 outline-none">
                                 <option value={1.2}>Sedentario (poco o nada ejercicio)</option>
                                 <option value={1.375}>Ligero (ejercicio 1-3 días/sem)</option>
                                 <option value={1.55}>Moderado (ejercicio 3-5 días/sem)</option>
@@ -815,9 +834,9 @@
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 mb-4">
-                            <button onClick={() => { setObjetivo('definicion'); guardarPerfil(); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'definicion' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Definición</button>
-                            <button onClick={() => { setObjetivo('mantenimiento'); guardarPerfil(); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'mantenimiento' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Mantenimiento</button>
-                            <button onClick={() => { setObjetivo('volumen'); guardarPerfil(); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'volumen' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Volumen</button>
+                            <button onClick={() => { setObjetivo('definicion'); guardarPerfil({ objetivo: 'definicion' }); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'definicion' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Definición</button>
+                            <button onClick={() => { setObjetivo('mantenimiento'); guardarPerfil({ objetivo: 'mantenimiento' }); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'mantenimiento' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Mantenimiento</button>
+                            <button onClick={() => { setObjetivo('volumen'); guardarPerfil({ objetivo: 'volumen' }); }} className={`py-2 rounded-xl text-xs font-bold transition-all ${objetivo === 'volumen' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}>Volumen</button>
                         </div>
 
                         <div className="p-4 bg-slate-900/90 rounded-xl border border-slate-700 text-center mb-4">
@@ -1195,7 +1214,7 @@
 
                     <div className="p-4 md:max-w-md md:mx-auto">
                         {activeTab === 'training' && <TrainingTab usuario={usuario} />}
-                        {activeTab === 'nutrition' && <NutritionTab usuario={usuario} />}
+                        {activeTab === 'nutrition' && <NutritionTab usuario={usuario} setUsuario={setUsuario} />}
                         {activeTab === 'progress' && <ProgressTab usuario={usuario} />}
                     </div>
 
