@@ -39,10 +39,11 @@
         .neon-glow { box-shadow: 0 0 18px rgba(163, 255, 18, 0.28); }
         @media (max-width: 1023px) { input, select, textarea { font-size: 16px !important; } }
         :root { --g300: 180 185 192; --g400: 138 144 153; --g500: 91 97 106; --g600: 58 63 70; --g700: 43 47 53; --g800: 31 34 38; --g900: 22 24 27; --g950: 14 15 17; }
-        html.light { --g300: 58 63 70; --g400: 91 97 106; --g500: 138 144 153; --g600: 191 196 203; --g700: 213 217 222; --g800: 255 255 255; --g900: 244 245 247; --g950: 233 236 239; }
-        html.light .text-white, html.light .hover\:text-white:hover { color: #16181b; }
-        html.light .text-neon-500 { color: #4d7c0f; }
-        html.light .neon-glow { box-shadow: 0 0 14px rgba(132, 204, 22, 0.35); }
+        html.light { --g300: 68 74 59; --g400: 100 107 89; --g500: 143 150 132; --g600: 196 202 184; --g700: 223 227 214; --g800: 255 255 255; --g900: 236 239 229; --g950: 243 245 239; }
+        html.light .text-white, html.light .hover\:text-white:hover { color: #14161a; }
+        html.light .text-neon-500 { color: #3f7d0a; }
+        html.light .shadow-lg { box-shadow: 0 1px 3px rgba(30, 40, 15, 0.08), 0 6px 16px rgba(30, 40, 15, 0.06); }
+        html.light .neon-glow { box-shadow: 0 4px 14px rgba(132, 204, 22, 0.35); }
     </style>
 </head>
 <body class="bg-graphite-950 text-white">
@@ -205,7 +206,7 @@
                     .then(res => res.json())
                     .then(data => {
                         const formatted = {};
-                        data.forEach(item => {
+                        (Array.isArray(data) ? data : []).forEach(item => {
                             const dia = item.diasemana || item.DiaSemana;
                             const idReg = item.id || item.Id;
                             const nombreEj = item.nombreep || item.nombreejercicio || item.NombreEjercicio;
@@ -224,15 +225,31 @@
                     .catch(err => console.error("Error al cargar rutinas:", err));
 
                 fetch(`/api/asistencia?usuarioId=${usuario.Id}`)
-                    .then(res => res.json())
+                    .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
                     .then(data => {
-                        const attMap = { ...attendance };
-                        data.forEach(item => {
+                        const lsKey = `ruko_asistencia_${usuario.Id}`;
+                        let local = {};
+                        try { local = JSON.parse(localStorage.getItem(lsKey) || '{}'); } catch (e) {}
+                        const serverMap = {};
+                        (Array.isArray(data) ? data : []).forEach(item => {
                             const fechaVal = item.fecha || item.Fecha;
-                            if (fechaVal) attMap[fechaVal.split('T')[0]] = true;
+                            if (fechaVal) serverMap[String(fechaVal).split('T')[0]] = true;
                         });
-                        setAttendance(attMap);
-                        localStorage.setItem(`ruko_asistencia_${usuario.Id}`, JSON.stringify(attMap));
+                        // Una sola vez: sube al servidor los días que solo existían en este navegador
+                        const migKey = lsKey + '_sync';
+                        if (!localStorage.getItem(migKey)) {
+                            Object.keys(local).filter(k => local[k] && !serverMap[k]).forEach(k => {
+                                serverMap[k] = true;
+                                fetch('/api/asistencia', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ usuarioId: usuario.Id, fecha: k, asistio: true })
+                                }).catch(err => console.error(err));
+                            });
+                            localStorage.setItem(migKey, '1');
+                        }
+                        setAttendance(serverMap);
+                        localStorage.setItem(lsKey, JSON.stringify(serverMap));
                     })
                     .catch(err => console.error("Error al cargar asistencia:", err));
             };
@@ -327,7 +344,14 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuarioId: usuario.Id, fecha: dateKey, asistio: nuevoEstado })
-                }).catch(err => console.error("Error al actualizar asistencia:", err));
+                }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); })
+                  .catch(err => {
+                      console.error("Error al actualizar asistencia:", err);
+                      const rev = { ...nuevo, [dateKey]: !nuevoEstado };
+                      setAttendance(rev);
+                      localStorage.setItem(`ruko_asistencia_${usuario.Id}`, JSON.stringify(rev));
+                      alert(t('saveErr'));
+                  });
             };
 
             let listaFiltrada = [];
@@ -577,7 +601,7 @@
             const cargarConsumo = () => {
                 fetch(`/api/consumo?usuarioId=${usuario.Id}&fecha=${fechaHoy}`)
                     .then(res => res.json())
-                    .then(data => setAlimentosConsumidos(data))
+                    .then(data => setAlimentosConsumidos(Array.isArray(data) ? data : []))
                     .catch(err => console.error("Error al cargar consumo:", err));
             };
 
@@ -615,9 +639,9 @@
                 fetch(`/api/alimentos?buscar=${encodeURIComponent(termino)}`)
                     .then(res => res.json())
                     .then(data => {
-                        setAlimentos(data);
+                        setAlimentos(Array.isArray(data) ? data : []);
                         const ic = {}, iu = {};
-                        data.forEach(item => { const id = item.id || item.Id; ic[id] = 100; iu[id] = 'g'; });
+                        (Array.isArray(data) ? data : []).forEach(item => { const id = item.id || item.Id; ic[id] = 100; iu[id] = 'g'; });
                         setCantidadesInputs(ic);
                         setTiposUnidad(iu);
                         setCargando(false);
@@ -710,20 +734,6 @@
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3 mb-4">
-                            {[
-                                [t('weight'), peso, setPeso, 'peso'],
-                                [t('height'), altura, setAltura, 'altura'],
-                                [t('age'), edad, setEdad, 'edad']
-                            ].map(([label, val, setter, key]) => (
-                                <div key={key}>
-                                    <label className="text-xs text-graphite-400 block mb-1">{label}</label>
-                                    <input type="number" inputMode="decimal" value={val}
-                                        onChange={(e) => { const v = Number(e.target.value); setter(v); guardarPerfil({ [key]: v }); }}
-                                        className={`w-full ${INPUT} p-2 font-bold text-center`} />
-                                </div>
-                            ))}
-                        </div>
 
                         <div className="mb-4">
                             <label className="text-xs text-graphite-400 block mb-1">{t('actLevel')}</label>
@@ -877,7 +887,7 @@
                     .then(res => res.json())
                     .then(data => {
                         const formatted = {};
-                        data.forEach(item => {
+                        (Array.isArray(data) ? data : []).forEach(item => {
                             const dia = item.diasemana || item.DiaSemana;
                             const nombreEj = item.nombreep || item.nombreejercicio || item.NombreEjercicio;
                             if (!formatted[dia]) formatted[dia] = [];
@@ -899,7 +909,7 @@
                 if (!selectedExercise) { setHistorialData([]); return; }
                 fetch(`/api/historial-cargas?usuarioId=${usuario.Id}&ejercicio=${encodeURIComponent(selectedExercise)}`)
                     .then(res => res.json())
-                    .then(data => setHistorialData(data))
+                    .then(data => setHistorialData(Array.isArray(data) ? data : []))
                     .catch(err => console.error("Error al cargar historial:", err));
             }, [selectedExercise]);
 
@@ -911,8 +921,8 @@
                 const pesos = historialData.map(i => i.pesomaximo !== undefined ? i.pesomaximo : i.PesoMaximo);
 
                 const light = document.documentElement.classList.contains('light');
-                const gridC = light ? '#d5d9de' : '#2b2f35';
-                const tickC = light ? '#5b616a' : '#8a9099';
+                const gridC = light ? '#dfe3d6' : '#2b2f35';
+                const tickC = light ? '#646b59' : '#8a9099';
                 chartInstance.current = new Chart(chartRef.current, {
                     type: 'line',
                     data: {
@@ -920,12 +930,12 @@
                         datasets: [{
                             label: t('chartLabel'),
                             data: pesos,
-                            borderColor: '#a3ff12',
-                            backgroundColor: 'rgba(163, 255, 18, 0.15)',
+                            borderColor: light ? '#5aa800' : '#a3ff12',
+                            backgroundColor: light ? 'rgba(90, 168, 0, 0.14)' : 'rgba(163, 255, 18, 0.15)',
                             borderWidth: 2,
                             fill: true,
                             tension: 0,
-                            pointBackgroundColor: '#a3ff12',
+                            pointBackgroundColor: light ? '#5aa800' : '#a3ff12',
                             pointBorderColor: light ? '#ffffff' : '#0e0f11',
                             pointRadius: 6,
                             pointHoverRadius: 8
@@ -1019,7 +1029,7 @@
                 base100: 'Base 100g/ml', grams: 'Gramos (g)', glasses: 'Vasos', spoons: 'Cucharadas', add: '+ Agregar', todayIntake: 'Consumo de Hoy', calories: 'Calorías', noFood: 'No has agregado alimentos hoy.',
                 evoTitle: 'Evolución de Cargas', evoSub: 'Polígono de frecuencias por sesión de entrenamiento', selDay: 'Seleccionar Día de Rutina', noRoutines: 'No hay rutinas creadas todavía.',
                 selEx: 'Seleccionar Ejercicio', noExDay: 'No hay ejercicios en este día', progEmpty: 'Entrená y anotá tus pesos en la rutina para ver tu polígono de frecuencias.', chartLabel: 'Peso Máximo del Día (kg)',
-                hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
+                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
                 yourName: 'Tu Nombre', password: 'Contraseña', login: 'Iniciar Sesión', register: 'Registrarse', noAcc: '¿No tenés cuenta? Registrate acá', haveAcc: '¿Ya tenés cuenta? Iniciá sesión',
                 errCreds: 'Credenciales inválidas.', errConn: 'No se pudo conectar con el servidor.', regOk: '¡Registrado con éxito! Ahora inicia sesión.', regErr: 'Error al registrarse.',
                 tmSub: 'Sigue corriendo aunque uses el resto de la app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', lap: 'Vuelta', laps: 'Vueltas',
@@ -1049,7 +1059,7 @@
                 base100: 'Base 100g/ml', grams: 'Gramas (g)', glasses: 'Copos', spoons: 'Colheres', add: '+ Adicionar', todayIntake: 'Consumo de Hoje', calories: 'Calorias', noFood: 'Você não adicionou alimentos hoje.',
                 evoTitle: 'Evolução das Cargas', evoSub: 'Polígono de frequências por sessão de treino', selDay: 'Selecionar Dia de Treino', noRoutines: 'Ainda não há treinos criados.',
                 selEx: 'Selecionar Exercício', noExDay: 'Não há exercícios neste dia', progEmpty: 'Treine e anote suas cargas para ver seu polígono de frequências.', chartLabel: 'Carga Máxima do Dia (kg)',
-                hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
+                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
                 yourName: 'Seu Nome', password: 'Senha', login: 'Entrar', register: 'Cadastrar', noAcc: 'Não tem conta? Cadastre-se aqui', haveAcc: 'Já tem conta? Entre',
                 errCreds: 'Credenciais inválidas.', errConn: 'Não foi possível conectar ao servidor.', regOk: 'Cadastro concluído! Agora faça login.', regErr: 'Erro ao cadastrar.',
                 tmSub: 'Continua contando enquanto você usa o resto do app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Zerar', lap: 'Volta', laps: 'Voltas',
@@ -1079,7 +1089,7 @@
                 base100: 'Per 100g/ml', grams: 'Grams (g)', glasses: 'Glasses', spoons: 'Tablespoons', add: '+ Add', todayIntake: "Today's Intake", calories: 'Calories', noFood: "You haven't added any food today.",
                 evoTitle: 'Load Progress', evoSub: 'Frequency polygon per training session', selDay: 'Select Workout Day', noRoutines: 'No workouts created yet.',
                 selEx: 'Select Exercise', noExDay: 'No exercises on this day', progEmpty: 'Train and log your weights to see your frequency polygon.', chartLabel: 'Daily Max Weight (kg)',
-                hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
+                saveErr: 'Could not save. Check the server connection.', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
                 yourName: 'Your Name', password: 'Password', login: 'Log In', register: 'Sign Up', noAcc: "Don't have an account? Sign up here", haveAcc: 'Already have an account? Log in',
                 errCreds: 'Invalid credentials.', errConn: 'Could not connect to the server.', regOk: 'Signed up successfully! Now log in.', regErr: 'Sign-up error.',
                 tmSub: 'Keeps running while you use the rest of the app', start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset', lap: 'Lap', laps: 'Laps',
@@ -1455,7 +1465,7 @@
             useEffect(() => {
                 document.documentElement.classList.toggle('light', theme === 'light');
                 const meta = document.querySelector('meta[name=theme-color]');
-                if (meta) meta.setAttribute('content', theme === 'light' ? '#e9ecef' : '#0e0f11');
+                if (meta) meta.setAttribute('content', theme === 'light' ? '#f3f5ef' : '#0e0f11');
             }, [theme]);
             useEffect(() => { document.documentElement.lang = lang; }, [lang]);
 

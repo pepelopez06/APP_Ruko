@@ -50,6 +50,16 @@ const normalizarUsuario = (u) => {
     };
 };
 
+// Diagnóstico: abrí /api/health en el navegador para ver si la base responde
+app.get('/api/health', async (req, res) => {
+    try {
+        await pool.query('SELECT 1');
+        res.json({ ok: true, database: 'conectada', DATABASE_URL_definida: !!process.env.DATABASE_URL });
+    } catch (e) {
+        res.status(500).json({ ok: false, DATABASE_URL_definida: !!process.env.DATABASE_URL, error: e.message, codigo: e.code || null });
+    }
+});
+
 // Ruta para buscar alimentos
 app.get('/api/alimentos', async (req, res) => {
     try {
@@ -124,7 +134,7 @@ app.get('/api/asistencia', async (req, res) => {
         if (!usuarioId || usuarioId === 'undefined') {
             return res.json([]);
         }
-        const resultado = await pool.query('SELECT * FROM AsistenciaGimnasio WHERE UsuarioId = $1', [usuarioId]);
+        const resultado = await pool.query("SELECT UsuarioId, TO_CHAR(Fecha::date, 'YYYY-MM-DD') AS fecha, Asistio FROM AsistenciaGimnasio WHERE UsuarioId = $1", [usuarioId]);
         res.json(resultado.rows);
     } catch (error) {
         console.error("DETALLE DE ERROR EN /api/asistencia:", error);
@@ -330,7 +340,7 @@ app.get('/api/historial-cargas', async (req, res) => {
             return res.json([]);
         }
         const resultado = await pool.query(
-            'SELECT Fecha, PesoMaximo FROM HistorialCargas WHERE UsuarioId = $1 AND Ejercicio = $2 ORDER BY Fecha ASC',
+            "SELECT TO_CHAR(Fecha::date, 'YYYY-MM-DD') AS fecha, PesoMaximo FROM HistorialCargas WHERE UsuarioId = $1 AND Ejercicio = $2 ORDER BY fecha ASC",
             [usuarioId, ejercicio]
         );
         res.json(resultado.rows);
