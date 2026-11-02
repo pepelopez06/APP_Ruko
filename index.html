@@ -94,6 +94,7 @@
             Pause: () => <Svg size={18}><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></Svg>,
             Reset: () => <Svg size={18}><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></Svg>,
             Flag: () => <Svg size={18}><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></Svg>,
+            ChevronLeft: () => <Svg size={20}><polyline points="15 18 9 12 15 6"/></Svg>,
             ArrowUpRight: () => <Svg size={18}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></Svg>,
             Sliders: () => <Svg size={20}><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.2" fill="currentColor"/><circle cx="15" cy="16" r="2.2" fill="currentColor"/></Svg>,
             Flame: () => <Svg><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></Svg>,
@@ -233,7 +234,8 @@
         // ====================================================
         const TrainingTab = ({ usuario }) => {
             const { t, lang } = useT();
-            const [trainingDays, setTrainingDays] = useState(4);
+            const [trainingDays, setTrainingDays] = useState(() => { const v = Number(localStorage.getItem('ruko_training_days')); return v >= 1 && v <= 7 ? v : 4; });
+            const [inDay, setInDay] = useState(false);
             const [isConfigOpen, setIsConfigOpen] = useState(false);
             const [currentDay, setCurrentDay] = useState(1);
             const [routines, setRoutines] = useState({});
@@ -413,6 +415,29 @@
             }
 
             const dbRef = useRef(null);
+            const changeDays = (n) => {
+                setTrainingDays(n);
+                localStorage.setItem('ruko_training_days', String(n));
+                if (currentDay > n) setCurrentDay(1);
+            };
+            const addDay = () => { if (trainingDays < 7) changeDays(trainingDays + 1); };
+            // Entrar/salir de un día (el botón "atrás" del celular también vuelve a los módulos)
+            useEffect(() => {
+                const onPop = () => { setInDay(false); setIsAddingDB(false); };
+                window.addEventListener('popstate', onPop);
+                return () => window.removeEventListener('popstate', onPop);
+            }, []);
+            const enterDay = (day) => {
+                setCurrentDay(day);
+                setInDay(true);
+                setIsAddingDB(false);
+                window.scrollTo({ top: 0 });
+                try { history.pushState({ ruko: 'day' }, ''); } catch (e) {}
+            };
+            const leaveDay = () => {
+                if (history.state && history.state.ruko === 'day') history.back();
+                else { setInDay(false); setIsAddingDB(false); }
+            };
             const openDB = () => {
                 setIsAddingDB(true);
                 setTimeout(() => { if (dbRef.current) dbRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
@@ -432,12 +457,13 @@
 
             return (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start pb-24 lg:pb-4">
+                    {!inDay && (<>
                     {/* Título + botones de vidrio */}
                     <div className="lg:col-span-2 flex items-center justify-between fade-up">
                         <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">{t('navTraining')}</h2>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setIsConfigOpen(!isConfigOpen)} className={`glass-btn ${isConfigOpen ? '!border-neon-500 !text-neon-500' : ''}`}><Icons.Sliders /></button>
-                            <button onClick={openDB} className="glass-btn"><Icons.Plus /></button>
+                            <button onClick={addDay} disabled={trainingDays >= 7} className="glass-btn disabled:opacity-40"><Icons.Plus /></button>
                         </div>
                     </div>
 
@@ -447,10 +473,7 @@
                                 <label className="text-sm font-medium text-graphite-300 w-full">{t('askDays')}</label>
                                 <select
                                     value={trainingDays}
-                                    onChange={(e) => {
-                                        setTrainingDays(Number(e.target.value));
-                                        if (currentDay > Number(e.target.value)) setCurrentDay(1);
-                                    }}
+                                    onChange={(e) => changeDays(Number(e.target.value))}
                                     className="bg-graphite-900 text-white p-2 rounded-lg outline-none border border-graphite-600 focus:border-neon-500 font-bold"
                                 >
                                     {[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} {t('days')}</option>)}
@@ -463,7 +486,7 @@
                     <div className="hero rounded-3xl p-5 text-ink neon-glow min-h-[200px] flex flex-col justify-between overflow-hidden fade-up">
                         <div className="flex justify-between items-start">
                             <span className="text-sm font-bold flex items-center gap-1.5">{t('today')} <span>✦</span></span>
-                            <button onClick={openDB} className="w-10 h-10 rounded-full bg-ink/15 hover:bg-ink/25 flex items-center justify-center cursor-pointer transition-colors"><Icons.ArrowUpRight /></button>
+                            <button onClick={() => enterDay(currentDay)} className="w-10 h-10 rounded-full bg-ink/15 hover:bg-ink/25 flex items-center justify-center cursor-pointer transition-colors"><Icons.ArrowUpRight /></button>
                         </div>
                         <div className="grid grid-cols-2 gap-4 items-end mt-6">
                             <div className="min-w-0">
@@ -519,46 +542,63 @@
                         </div>
                     </div>
 
-                    {/* Días de rutina */}
+                    {/* Días como módulos */}
                     <div className="lg:col-span-2">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-graphite-400 mb-3">{t('yourDays')}</h3>
                         <div className="stagger grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                             {Array.from({ length: trainingDays }, (_, i) => i + 1).map(day => {
                                 const sel = currentDay === day;
+                                const list = routines[day] || [];
                                 return (
-                                    <div key={day} onClick={() => setCurrentDay(day)}
-                                        className={`press relative p-4 rounded-3xl cursor-pointer border transition-all duration-300 min-h-[128px] flex flex-col justify-between ${
-                                            sel ? 'border-neon-500 bg-neon-500/10 neon-glow' : 'bg-graphite-800 border-graphite-700 hover:border-graphite-500'
+                                    <div key={day} onClick={() => enterDay(day)} role="button"
+                                        className={`press relative overflow-hidden rounded-3xl border p-4 min-h-[190px] flex flex-col justify-between cursor-pointer transition-all duration-300 ${
+                                            sel ? 'border-neon-500/70 bg-gradient-to-br from-neon-500/15 to-transparent neon-glow' : 'bg-graphite-800 border-graphite-700 hover:border-graphite-500'
                                         }`}>
                                         <div className="flex justify-between items-start">
-                                            <span className="text-[11px] uppercase font-bold tracking-wider text-graphite-400">{t('day')} {day}</span>
-                                            <span className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${sel ? 'bg-neon-500 text-ink' : 'bg-graphite-700 text-graphite-300'}`}><Icons.ArrowUpRight /></span>
+                                            <span className={`text-4xl font-black tabular-nums leading-none ${sel ? 'text-neon-500' : 'text-graphite-600'}`}>{String(day).padStart(2, '0')}</span>
+                                            <span className={`w-9 h-9 rounded-full flex items-center justify-center ${sel ? 'bg-neon-500 text-ink' : 'bg-graphite-700 text-graphite-300'}`}><Icons.ArrowUpRight /></span>
                                         </div>
-                                        <div>
-                                            <input
-                                                type="text"
-                                                value={nombresDias[day] || ''}
-                                                onChange={(e) => {
-                                                    const nuevos = { ...nombresDias, [day]: e.target.value };
-                                                    setNombresDias(nuevos);
-                                                    localStorage.setItem('ruko_nombres_dias', JSON.stringify(nuevos));
-                                                }}
-                                                onClick={(e) => e.stopPropagation()}
-                                                placeholder={t('namePh')}
-                                                className="w-full bg-transparent text-white font-black text-xl outline-none placeholder-graphite-500 border-b border-transparent focus:border-neon-500"
-                                            />
-                                            <p className="text-xs text-graphite-400 mt-1">{(routines[day] || []).length} {t('exercises')}</p>
+                                        <div className="min-w-0">
+                                            <p className="text-xl font-black leading-tight text-white break-words">{nombresDias[day] || t('noName')}</p>
+                                            <div className="mt-2 space-y-0.5">
+                                                {list.slice(0, 2).map(ex => <p key={ex.dbId} className="text-[11px] text-graphite-400 truncate">{ex.name}</p>)}
+                                                {list.length > 2 && <p className="text-[11px] text-graphite-500">+{list.length - 2}</p>}
+                                            </div>
+                                            <span className="inline-block mt-2 text-[11px] font-bold px-2.5 py-1 rounded-full bg-graphite-900 border border-graphite-700 text-graphite-300">{list.length} {t('exercises')}</span>
                                         </div>
                                     </div>
                                 );
                             })}
+                            {trainingDays < 7 && (
+                                <div onClick={addDay} role="button"
+                                    className="press rounded-3xl border-2 border-dashed border-graphite-600 hover:border-neon-500 text-graphite-400 hover:text-neon-500 min-h-[190px] flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors">
+                                    <Icons.Plus /><span className="text-xs font-bold">{t('newDay')}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
+                    </>)}
 
-                    <h3 className="lg:col-span-2 text-lg font-bold text-white mt-2 border-b border-graphite-700 pb-2 flex justify-between items-center">
-                        <span>{t('routine')}: {t('day')} {currentDay} ({nombresDias[currentDay] || t('noName')})</span>
-                        <span className="text-xs text-neon-500 font-normal">{activeRoutine.length} {t('exercises')}</span>
-                    </h3>
+                    {/* Vista interna del día */}
+                    {inDay && (<>
+                    <div className="lg:col-span-2 flex items-center gap-3 fade-up">
+                        <button onClick={leaveDay} className="glass-btn"><Icons.ChevronLeft /></button>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[11px] uppercase font-bold tracking-wider text-graphite-400">{t('day')} {currentDay} · {activeRoutine.length} {t('exercises')}</p>
+                            <input
+                                type="text"
+                                value={nombresDias[currentDay] || ''}
+                                onChange={(e) => {
+                                    const nuevos = { ...nombresDias, [currentDay]: e.target.value };
+                                    setNombresDias(nuevos);
+                                    localStorage.setItem('ruko_nombres_dias', JSON.stringify(nuevos));
+                                }}
+                                placeholder={t('namePh')}
+                                className="w-full bg-transparent text-white font-black text-3xl sm:text-4xl outline-none placeholder-graphite-500 border-b border-transparent focus:border-neon-500"
+                            />
+                        </div>
+                        <button onClick={openDB} className="glass-btn"><Icons.Plus /></button>
+                    </div>
 
                     {/* Ejercicios */}
                     <div className="space-y-4 lg:col-span-2 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:items-start">
@@ -658,6 +698,7 @@
                             </div>
                         </div>
                     )}
+                    </>)}
                 </div>
             );
         };
@@ -676,6 +717,7 @@
             const [busqueda, setBusqueda] = useState('');
             const [alimentos, setAlimentos] = useState([]);
             const [cargando, setCargando] = useState(false);
+            const [flashAdded, setFlashAdded] = useState('');
             const [cantidadesInputs, setCantidadesInputs] = useState({});
             const [tiposUnidad, setTiposUnidad] = useState({});
             const [alimentosConsumidos, setAlimentosConsumidos] = useState([]);
@@ -781,9 +823,15 @@
                         grasas: calculo.grasas
                     })
                 })
-                    .then(res => res.json())
-                    .then(() => cargarConsumo())
-                    .catch(err => console.error("Error al guardar consumo:", err));
+                    .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+                    .then(() => {
+                        cargarConsumo();
+                        setBusqueda('');
+                        setAlimentos([]);
+                        setFlashAdded(item.nombre || item.Nombre || '');
+                        setTimeout(() => setFlashAdded(''), 2500);
+                    })
+                    .catch(err => { console.error("Error al guardar consumo:", err); alert(t('saveErr')); });
             };
 
             const eliminarDelConsumo = (id) => {
@@ -863,6 +911,7 @@
                             className={`w-full ${INPUT} px-4 py-3 mb-4`} />
 
                         {cargando && <p className="text-xs text-graphite-400 text-center py-2">{t('searching')}</p>}
+                        {flashAdded && <p className="text-xs text-neon-500 font-bold text-center py-2 fade-up">✓ {t('added')}: {flashAdded}</p>}
 
                         {alimentos.length > 0 && (
                             <div className="max-h-[50vh] lg:max-h-96 overflow-y-auto space-y-3 mb-6 bg-graphite-900/80 p-2 rounded-xl border border-graphite-700">
@@ -1126,7 +1175,7 @@
                 base100: 'Base 100g/ml', grams: 'Gramos (g)', glasses: 'Vasos', spoons: 'Cucharadas', add: '+ Agregar', todayIntake: 'Consumo de Hoy', calories: 'Calorías', noFood: 'No has agregado alimentos hoy.',
                 evoTitle: 'Evolución de Cargas', evoSub: 'Polígono de frecuencias por sesión de entrenamiento', selDay: 'Seleccionar Día de Rutina', noRoutines: 'No hay rutinas creadas todavía.',
                 selEx: 'Seleccionar Ejercicio', noExDay: 'No hay ejercicios en este día', progEmpty: 'Entrená y anotá tus pesos en la rutina para ver tu polígono de frecuencias.', chartLabel: 'Peso Máximo del Día (kg)',
-                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', today: 'Hoy', completed: 'Completado', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sesiones', statGain: 'Mejora', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
+                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', newDay: 'Nuevo día', added: 'Agregado', today: 'Hoy', completed: 'Completado', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sesiones', statGain: 'Mejora', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
                 yourName: 'Tu Nombre', password: 'Contraseña', login: 'Iniciar Sesión', register: 'Registrarse', noAcc: '¿No tenés cuenta? Registrate acá', haveAcc: '¿Ya tenés cuenta? Iniciá sesión',
                 errCreds: 'Credenciales inválidas.', errConn: 'No se pudo conectar con el servidor.', regOk: '¡Registrado con éxito! Ahora inicia sesión.', regErr: 'Error al registrarse.',
                 tmSub: 'Sigue corriendo aunque uses el resto de la app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', lap: 'Vuelta', laps: 'Vueltas',
@@ -1156,7 +1205,7 @@
                 base100: 'Base 100g/ml', grams: 'Gramas (g)', glasses: 'Copos', spoons: 'Colheres', add: '+ Adicionar', todayIntake: 'Consumo de Hoje', calories: 'Calorias', noFood: 'Você não adicionou alimentos hoje.',
                 evoTitle: 'Evolução das Cargas', evoSub: 'Polígono de frequências por sessão de treino', selDay: 'Selecionar Dia de Treino', noRoutines: 'Ainda não há treinos criados.',
                 selEx: 'Selecionar Exercício', noExDay: 'Não há exercícios neste dia', progEmpty: 'Treine e anote suas cargas para ver seu polígono de frequências.', chartLabel: 'Carga Máxima do Dia (kg)',
-                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', today: 'Hoje', completed: 'Concluído', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sessões', statGain: 'Evolução', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
+                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', newDay: 'Novo dia', added: 'Adicionado', today: 'Hoje', completed: 'Concluído', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sessões', statGain: 'Evolução', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
                 yourName: 'Seu Nome', password: 'Senha', login: 'Entrar', register: 'Cadastrar', noAcc: 'Não tem conta? Cadastre-se aqui', haveAcc: 'Já tem conta? Entre',
                 errCreds: 'Credenciais inválidas.', errConn: 'Não foi possível conectar ao servidor.', regOk: 'Cadastro concluído! Agora faça login.', regErr: 'Erro ao cadastrar.',
                 tmSub: 'Continua contando enquanto você usa o resto do app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Zerar', lap: 'Volta', laps: 'Voltas',
@@ -1186,7 +1235,7 @@
                 base100: 'Per 100g/ml', grams: 'Grams (g)', glasses: 'Glasses', spoons: 'Tablespoons', add: '+ Add', todayIntake: "Today's Intake", calories: 'Calories', noFood: "You haven't added any food today.",
                 evoTitle: 'Load Progress', evoSub: 'Frequency polygon per training session', selDay: 'Select Workout Day', noRoutines: 'No workouts created yet.',
                 selEx: 'Select Exercise', noExDay: 'No exercises on this day', progEmpty: 'Train and log your weights to see your frequency polygon.', chartLabel: 'Daily Max Weight (kg)',
-                saveErr: 'Could not save. Check the server connection.', today: 'Today', completed: 'Completed', thisWeek: 'this week', statMax: 'Max', statSessions: 'Sessions', statGain: 'Gain', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
+                saveErr: 'Could not save. Check the server connection.', newDay: 'New day', added: 'Added', today: 'Today', completed: 'Completed', thisWeek: 'this week', statMax: 'Max', statSessions: 'Sessions', statGain: 'Gain', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
                 yourName: 'Your Name', password: 'Password', login: 'Log In', register: 'Sign Up', noAcc: "Don't have an account? Sign up here", haveAcc: 'Already have an account? Log in',
                 errCreds: 'Invalid credentials.', errConn: 'Could not connect to the server.', regOk: 'Signed up successfully! Now log in.', regErr: 'Sign-up error.',
                 tmSub: 'Keeps running while you use the rest of the app', start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset', lap: 'Lap', laps: 'Laps',
