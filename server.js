@@ -10,11 +10,8 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.static(__dirname));
 
 // Conexión a Supabase (Pooler). La cadena va en la variable de entorno DATABASE_URL.
-if (!process.env.DATABASE_URL) {
-    console.error("Falta la variable de entorno DATABASE_URL");
-}
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL || "postgresql://postgres.cvaijwcgznsciwhczlmx:Adminpepe90__@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
     ssl: { rejectUnauthorized: false }
 });
 
