@@ -94,6 +94,7 @@
             Pause: () => <Svg size={18}><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></Svg>,
             Reset: () => <Svg size={18}><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></Svg>,
             Flag: () => <Svg size={18}><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></Svg>,
+            User: () => <Svg><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></Svg>,
             ChevronLeft: () => <Svg size={20}><polyline points="15 18 9 12 15 6"/></Svg>,
             ArrowUpRight: () => <Svg size={18}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></Svg>,
             Sliders: () => <Svg size={20}><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.2" fill="currentColor"/><circle cx="15" cy="16" r="2.2" fill="currentColor"/></Svg>,
@@ -463,7 +464,7 @@
                         <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">{t('navTraining')}</h2>
                         <div className="flex items-center gap-2">
                             <button onClick={() => setIsConfigOpen(!isConfigOpen)} className={`glass-btn ${isConfigOpen ? '!border-neon-500 !text-neon-500' : ''}`}><Icons.Sliders /></button>
-                            <button onClick={addDay} disabled={trainingDays >= 7} className="glass-btn disabled:opacity-40"><Icons.Plus /></button>
+                            
                         </div>
                     </div>
 
@@ -1007,6 +1008,8 @@
         // ====================================================
         const ProgressTab = ({ usuario }) => {
             const { t } = useT();
+            const dayNames = (() => { try { return JSON.parse(localStorage.getItem('ruko_nombres_dias') || '{}'); } catch (e) { return {}; } })();
+            const dayLabel = (d) => ((dayNames[d] || '').trim() || `${t('day')} ${d}`);
             const [routines, setRoutines] = useState({});
             const [selectedDay, setSelectedDay] = useState(1);
             const [selectedExercise, setSelectedExercise] = useState('');
@@ -1116,7 +1119,7 @@
                                                     ? 'bg-neon-500 text-ink neon-glow'
                                                     : 'bg-graphite-900 text-graphite-400 border border-graphite-700 hover:border-graphite-500'
                                             }`}>
-                                            {t('day')} {dia}
+                                            {dayLabel(dia)}
                                         </button>
                                     ))
                                 )}
@@ -1173,9 +1176,9 @@
                 cut: 'Definición', maint: 'Mantenimiento', bulk: 'Volumen', goal: 'Meta Diaria Recomendada', protein: 'Proteínas', carbs: 'Carbohidratos', fats: 'Grasas', carbsShort: 'Carbos',
                 nutLog: 'Registro Nutricional', nutLogSub: 'Busca alimentos en la base de datos', foodPh: 'Escribe un alimento (ej. Asado, Alfajor, Arroz...)', searching: 'Buscando en la base de datos...',
                 base100: 'Base 100g/ml', grams: 'Gramos (g)', glasses: 'Vasos', spoons: 'Cucharadas', add: '+ Agregar', todayIntake: 'Consumo de Hoy', calories: 'Calorías', noFood: 'No has agregado alimentos hoy.',
-                evoTitle: 'Evolución de Cargas', evoSub: 'Polígono de frecuencias por sesión de entrenamiento', selDay: 'Seleccionar Día de Rutina', noRoutines: 'No hay rutinas creadas todavía.',
-                selEx: 'Seleccionar Ejercicio', noExDay: 'No hay ejercicios en este día', progEmpty: 'Entrená y anotá tus pesos en la rutina para ver tu polígono de frecuencias.', chartLabel: 'Peso Máximo del Día (kg)',
-                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', newDay: 'Nuevo día', added: 'Agregado', today: 'Hoy', completed: 'Completado', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sesiones', statGain: 'Mejora', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
+                evoTitle: 'Tu progreso', evoSub: 'Mirá cómo vas levantando más peso con el tiempo', selDay: 'Elegí el día', noRoutines: 'Todavía no armaste ningún día de entrenamiento.',
+                selEx: 'Elegí el ejercicio', noExDay: 'Este día no tiene ejercicios', progEmpty: 'Anotá los kilos que usás en cada ejercicio y acá vas a ver cómo mejorás.', chartLabel: 'Tu mejor peso del día (kg)',
+                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', welcome: '¡Bienvenido a RUKO!', aboutYou: 'Contanos sobre vos', aboutYouSub: 'Los usamos para calcular tus calorías y macros. Después los podés cambiar en Ajustes.', letsGo: '¡Empezar!', skip: 'Saltar introducción', fillData: 'Completá peso, altura y edad con valores válidos.', newDay: 'Nuevo día', added: 'Agregado', today: 'Hoy', completed: 'Completado', thisWeek: 'esta semana', statMax: 'Mejor marca', statSessions: 'Entrenos', statGain: 'Mejora', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
                 yourName: 'Tu Nombre', password: 'Contraseña', login: 'Iniciar Sesión', register: 'Registrarse', noAcc: '¿No tenés cuenta? Registrate acá', haveAcc: '¿Ya tenés cuenta? Iniciá sesión',
                 errCreds: 'Credenciales inválidas.', errConn: 'No se pudo conectar con el servidor.', regOk: '¡Registrado con éxito! Ahora inicia sesión.', regErr: 'Error al registrarse.',
                 tmSub: 'Sigue corriendo aunque uses el resto de la app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', lap: 'Vuelta', laps: 'Vueltas',
@@ -1189,7 +1192,7 @@
                 h1t: 'Rutinas', h1d: 'Elegí cuántos días entrenás, nombrá cada día y sumá ejercicios desde la base. Anotá kg y repeticiones: se guarda solo.',
                 h2t: 'Asistencia', h2d: 'Tocá un día del calendario para marcar que entrenaste. Tocalo de nuevo para desmarcarlo.',
                 h3t: 'Nutrición', h3d: 'Cargá tu peso, altura y edad para ver tu meta de calorías y macros. Buscá alimentos y registrá lo que comés.',
-                h4t: 'Progreso', h4d: 'Elegí un ejercicio y mirá cómo evoluciona tu peso máximo sesión a sesión.',
+                h4t: 'Progreso', h4d: 'Elegí un ejercicio y mirá cómo van subiendo tus kilos entrenamiento tras entrenamiento.',
                 h5t: 'Cronómetro', h5d: 'Iniciá el cronómetro y seguí usando la app: un aviso arriba te muestra el tiempo y te lleva de vuelta al tocarlo.'
             },
             pt: {
@@ -1203,9 +1206,9 @@
                 cut: 'Definição', maint: 'Manutenção', bulk: 'Volume', goal: 'Meta Diária Recomendada', protein: 'Proteínas', carbs: 'Carboidratos', fats: 'Gorduras', carbsShort: 'Carbos',
                 nutLog: 'Registro Nutricional', nutLogSub: 'Busque alimentos no banco de dados', foodPh: 'Digite um alimento (ex. Churrasco, Arroz...)', searching: 'Buscando no banco de dados...',
                 base100: 'Base 100g/ml', grams: 'Gramas (g)', glasses: 'Copos', spoons: 'Colheres', add: '+ Adicionar', todayIntake: 'Consumo de Hoje', calories: 'Calorias', noFood: 'Você não adicionou alimentos hoje.',
-                evoTitle: 'Evolução das Cargas', evoSub: 'Polígono de frequências por sessão de treino', selDay: 'Selecionar Dia de Treino', noRoutines: 'Ainda não há treinos criados.',
-                selEx: 'Selecionar Exercício', noExDay: 'Não há exercícios neste dia', progEmpty: 'Treine e anote suas cargas para ver seu polígono de frequências.', chartLabel: 'Carga Máxima do Dia (kg)',
-                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', newDay: 'Novo dia', added: 'Adicionado', today: 'Hoje', completed: 'Concluído', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sessões', statGain: 'Evolução', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
+                evoTitle: 'Seu progresso', evoSub: 'Veja como você levanta cada vez mais peso', selDay: 'Escolha o dia', noRoutines: 'Você ainda não montou nenhum dia de treino.',
+                selEx: 'Escolha o exercício', noExDay: 'Este dia não tem exercícios', progEmpty: 'Anote os quilos que usa em cada exercício e aqui você vê sua evolução.', chartLabel: 'Seu melhor peso do dia (kg)',
+                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', welcome: 'Bem-vindo ao RUKO!', aboutYou: 'Conte sobre você', aboutYouSub: 'Usamos para calcular suas calorias e macros. Depois você pode alterá-los em Configurações.', letsGo: 'Começar!', skip: 'Pular introdução', fillData: 'Preencha peso, altura e idade com valores válidos.', newDay: 'Novo dia', added: 'Adicionado', today: 'Hoje', completed: 'Concluído', thisWeek: 'esta semana', statMax: 'Melhor marca', statSessions: 'Treinos', statGain: 'Evolução', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
                 yourName: 'Seu Nome', password: 'Senha', login: 'Entrar', register: 'Cadastrar', noAcc: 'Não tem conta? Cadastre-se aqui', haveAcc: 'Já tem conta? Entre',
                 errCreds: 'Credenciais inválidas.', errConn: 'Não foi possível conectar ao servidor.', regOk: 'Cadastro concluído! Agora faça login.', regErr: 'Erro ao cadastrar.',
                 tmSub: 'Continua contando enquanto você usa o resto do app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Zerar', lap: 'Volta', laps: 'Voltas',
@@ -1219,7 +1222,7 @@
                 h1t: 'Treinos', h1d: 'Escolha quantos dias treina, dê nome a cada dia e adicione exercícios do banco. Anote kg e repetições: salva sozinho.',
                 h2t: 'Presença', h2d: 'Toque em um dia do calendário para marcar que treinou. Toque de novo para desmarcar.',
                 h3t: 'Nutrição', h3d: 'Informe peso, altura e idade para ver sua meta de calorias e macros. Busque alimentos e registre o que come.',
-                h4t: 'Progresso', h4d: 'Escolha um exercício e veja como sua carga máxima evolui sessão a sessão.',
+                h4t: 'Progresso', h4d: 'Escolha um exercício e veja seus quilos subindo treino após treino.',
                 h5t: 'Cronômetro', h5d: 'Inicie o cronômetro e continue usando o app: um aviso no topo mostra o tempo e leva você de volta ao tocar.'
             },
             en: {
@@ -1233,9 +1236,9 @@
                 cut: 'Cutting', maint: 'Maintenance', bulk: 'Bulking', goal: 'Recommended Daily Goal', protein: 'Protein', carbs: 'Carbs', fats: 'Fats', carbsShort: 'Carbs',
                 nutLog: 'Food Log', nutLogSub: 'Search foods in the database', foodPh: 'Type a food (e.g. Steak, Rice...)', searching: 'Searching the database...',
                 base100: 'Per 100g/ml', grams: 'Grams (g)', glasses: 'Glasses', spoons: 'Tablespoons', add: '+ Add', todayIntake: "Today's Intake", calories: 'Calories', noFood: "You haven't added any food today.",
-                evoTitle: 'Load Progress', evoSub: 'Frequency polygon per training session', selDay: 'Select Workout Day', noRoutines: 'No workouts created yet.',
-                selEx: 'Select Exercise', noExDay: 'No exercises on this day', progEmpty: 'Train and log your weights to see your frequency polygon.', chartLabel: 'Daily Max Weight (kg)',
-                saveErr: 'Could not save. Check the server connection.', newDay: 'New day', added: 'Added', today: 'Today', completed: 'Completed', thisWeek: 'this week', statMax: 'Max', statSessions: 'Sessions', statGain: 'Gain', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
+                evoTitle: 'Your progress', evoSub: 'See how you lift more weight over time', selDay: 'Pick a day', noRoutines: "You haven't set up any training days yet.",
+                selEx: 'Pick an exercise', noExDay: 'This day has no exercises', progEmpty: "Log the weight you use in each exercise and you'll see your improvement here.", chartLabel: 'Your best weight that day (kg)',
+                saveErr: 'Could not save. Check the server connection.', welcome: 'Welcome to RUKO!', aboutYou: 'Tell us about you', aboutYouSub: "We use them to calculate your calories and macros. You can change them later in Settings.", letsGo: "Let's go!", skip: 'Skip intro', fillData: 'Enter a valid weight, height and age.', newDay: 'New day', added: 'Added', today: 'Today', completed: 'Completed', thisWeek: 'this week', statMax: 'Personal best', statSessions: 'Workouts', statGain: 'Gain', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
                 yourName: 'Your Name', password: 'Password', login: 'Log In', register: 'Sign Up', noAcc: "Don't have an account? Sign up here", haveAcc: 'Already have an account? Log in',
                 errCreds: 'Invalid credentials.', errConn: 'Could not connect to the server.', regOk: 'Signed up successfully! Now log in.', regErr: 'Sign-up error.',
                 tmSub: 'Keeps running while you use the rest of the app', start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset', lap: 'Lap', laps: 'Laps',
@@ -1249,7 +1252,7 @@
                 h1t: 'Workouts', h1d: 'Pick how many days you train, name each day and add exercises from the library. Log kg and reps: it saves automatically.',
                 h2t: 'Attendance', h2d: 'Tap a calendar day to mark that you trained. Tap it again to unmark.',
                 h3t: 'Nutrition', h3d: 'Enter your weight, height and age to see your calorie and macro goals. Search foods and log what you eat.',
-                h4t: 'Progress', h4d: 'Pick an exercise and watch your max weight evolve session by session.',
+                h4t: 'Progress', h4d: 'Pick an exercise and watch your weights go up workout after workout.',
                 h5t: 'Stopwatch', h5d: 'Start the stopwatch and keep using the app: a banner on top shows the time and takes you back when tapped.'
             }
         };
@@ -1435,32 +1438,90 @@
             </div>
         );
 
-        const HowModal = ({ onClose }) => {
+        const HowModal = ({ onClose, onboarding, usuario, setUsuario }) => {
             const { t } = useT();
+            const slides = 5;
+            const total = onboarding ? slides + 1 : slides;
+            const hasDefaults = usuario && Number(usuario.Peso) === 75 && Number(usuario.Altura) === 175 && Number(usuario.Edad) === 20;
             const [i, setI] = useState(0);
-            const total = 5;
-            const StepIcon = [Icons.Dumbbell, Icons.Calendar, Icons.Apple, Icons.TrendingUp, Icons.Timer][i];
+            const [form, setForm] = useState(() => (onboarding && usuario && !hasDefaults)
+                ? { peso: String(usuario.Peso || ''), altura: String(usuario.Altura || ''), edad: String(usuario.Edad || '') }
+                : { peso: '', altura: '', edad: '' });
+            const [err, setErr] = useState('');
+            const [saving, setSaving] = useState(false);
+            const isForm = onboarding && i === slides;
+            const StepIcon = [Icons.Dumbbell, Icons.Calendar, Icons.Apple, Icons.TrendingUp, Icons.Timer, Icons.User][i];
+
+            const save = () => {
+                const p = Number(String(form.peso).replace(',', '.')), a = Number(form.altura), e = Number(form.edad);
+                if (!(p >= 20 && p <= 300) || !(a >= 100 && a <= 250) || !(e >= 10 && e <= 100)) { setErr(t('fillData')); return; }
+                setSaving(true);
+                fetch(`/api/usuario/${usuario.Id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ peso: p, altura: a, edad: e, actividad: usuario.Actividad || 1.55, objetivo: usuario.Objetivo || 'mantenimiento' })
+                })
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(() => {
+                        const u = { ...usuario, Peso: p, peso: p, Altura: a, altura: a, Edad: e, edad: e };
+                        localStorage.setItem('fitpro_usuario', JSON.stringify(u));
+                        setUsuario(u);
+                        onClose();
+                    })
+                    .catch(() => { setSaving(false); setErr(t('saveErr')); });
+            };
+
             return (
-                <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-                    <div className={`${CARD} w-full max-w-md p-6`} onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={onboarding ? undefined : onClose}>
+                    <div className={`${CARD} w-full max-w-md p-6 max-h-[92vh] overflow-y-auto fade-up`} onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-5">
-                            <h3 className="text-white font-bold">{t('how')}</h3>
-                            <button onClick={onClose} className="text-xs text-graphite-400 hover:text-white cursor-pointer">{t('close')}</button>
+                            <h3 className="text-white font-bold">{onboarding ? t('welcome') : t('how')}</h3>
+                            {!onboarding && <button onClick={onClose} className="text-xs text-graphite-400 hover:text-white cursor-pointer">{t('close')}</button>}
                         </div>
-                        <div className="text-center py-4 min-h-[190px]">
-                            <div className="inline-flex text-neon-500 bg-neon-500/10 p-4 rounded-full mb-4"><StepIcon /></div>
-                            <h4 className="text-xl font-bold text-white mb-2">{t(`h${i + 1}t`)}</h4>
-                            <p className="text-sm text-graphite-300 leading-relaxed">{t(`h${i + 1}d`)}</p>
-                        </div>
-                        <div className="flex justify-center gap-1.5 mb-5">
+
+                        {isForm ? (
+                            <div className="py-2 min-h-[190px]">
+                                <div className="text-center mb-5">
+                                    <div className="inline-flex text-neon-500 bg-neon-500/10 p-4 rounded-full mb-3"><StepIcon /></div>
+                                    <h4 className="text-xl font-bold text-white mb-1">{t('aboutYou')}</h4>
+                                    <p className="text-sm text-graphite-300 leading-relaxed">{t('aboutYouSub')}</p>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {[['peso', t('weight')], ['altura', t('height')], ['edad', t('age')]].map(([k, l]) => (
+                                        <div key={k}>
+                                            <label className="text-xs text-graphite-400 block mb-1">{l}</label>
+                                            <input type="number" inputMode="decimal" value={form[k]}
+                                                onChange={(e) => { setForm({ ...form, [k]: e.target.value }); setErr(''); }}
+                                                className={`w-full ${INPUT} p-3 font-bold text-center`} />
+                                        </div>
+                                    ))}
+                                </div>
+                                {err && <p className="text-xs text-red-400 font-semibold mt-3">{err}</p>}
+                            </div>
+                        ) : (
+                            <div className="text-center py-4 min-h-[190px]">
+                                <div className="inline-flex text-neon-500 bg-neon-500/10 p-4 rounded-full mb-4"><StepIcon /></div>
+                                <h4 className="text-xl font-bold text-white mb-2">{t(`h${i + 1}t`)}</h4>
+                                <p className="text-sm text-graphite-300 leading-relaxed">{t(`h${i + 1}d`)}</p>
+                            </div>
+                        )}
+
+                        <div className="flex justify-center gap-1.5 my-5">
                             {Array.from({ length: total }, (_, k) => (
                                 <span key={k} className={`h-1.5 rounded-full transition-all ${k === i ? 'w-6 bg-neon-500' : 'w-1.5 bg-graphite-600'}`}></span>
                             ))}
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0} className="py-3 rounded-xl bg-graphite-700 text-white font-bold text-sm disabled:opacity-40 cursor-pointer">{t('prev')}</button>
-                            <button onClick={() => (i === total - 1 ? onClose() : setI(i + 1))} className={`${BTN_NEON} py-3 rounded-xl text-sm`}>{i === total - 1 ? t('done') : t('next')}</button>
+                            {isForm ? (
+                                <button onClick={save} disabled={saving} className={`${BTN_NEON} py-3 rounded-xl text-sm disabled:opacity-60`}>{t('letsGo')}</button>
+                            ) : (
+                                <button onClick={() => (i === total - 1 ? onClose() : setI(i + 1))} className={`${BTN_NEON} py-3 rounded-xl text-sm`}>{i === total - 1 ? t('done') : t('next')}</button>
+                            )}
                         </div>
+                        {onboarding && !isForm && (
+                            <button onClick={() => setI(slides)} className="w-full mt-3 text-xs text-graphite-400 hover:text-white cursor-pointer">{t('skip')}</button>
+                        )}
                     </div>
                 </div>
             );
@@ -1617,6 +1678,7 @@
             const [lang, setLangState] = useState(() => localStorage.getItem('ruko_lang') || detectLang());
             const [theme, setThemeState] = useState(() => localStorage.getItem('ruko_theme') || 'dark');
             const [notif, setNotif] = useState(() => localStorage.getItem('ruko_notif') === 'on');
+            const [onboard, setOnboard] = useState(false);
             const crono = useCrono();
             const t = makeT(lang);
 
@@ -1626,6 +1688,9 @@
                 if (meta) meta.setAttribute('content', theme === 'light' ? '#f3f5ef' : '#0e0f11');
             }, [theme]);
             useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+            useEffect(() => {
+                if (usuario && usuario.Id && !localStorage.getItem(`ruko_onboarded_${usuario.Id}`)) setOnboard(true);
+            }, [usuario ? usuario.Id : null]);
 
             const setLang = (l) => { setLangState(l); localStorage.setItem('ruko_lang', l); };
             const setTheme = (th) => { setThemeState(th); localStorage.setItem('ruko_theme', th); };
@@ -1720,7 +1785,7 @@
             const navItems = [
                 { id: 'training', label: t('navTraining'), Icon: Icons.Dumbbell },
                 { id: 'nutrition', label: t('navNutrition'), Icon: Icons.Flame },
-                { id: 'progress', label: t('navProgress'), Icon: Icons.BarChart },
+                { id: 'progress', label: t('navProgress'), Icon: Icons.TrendingUp },
                 { id: 'timer', label: t('navTimer'), Icon: Icons.Timer },
             ];
             const bannerLabel = crono.running ? t('running') : t('paused');
@@ -1729,6 +1794,10 @@
                 <LangCtx.Provider value={ctx}>
                     <div className="min-h-[100dvh] bg-graphite-950 font-sans">
                         <CronoEffects c={crono.c} notifEnabled={notif} label={t('running')} />
+                        {onboard && (
+                            <HowModal onboarding usuario={usuario} setUsuario={setUsuario}
+                                onClose={() => { localStorage.setItem(`ruko_onboarded_${usuario.Id}`, '1'); setOnboard(false); }} />
+                        )}
 
                         {/* Sidebar (desktop) */}
                         <aside className="hidden lg:flex fixed inset-y-0 left-0 w-60 flex-col bg-graphite-900 border-r border-graphite-800 p-5 z-20">
@@ -1747,23 +1816,22 @@
                                 className={`mt-auto w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
                                     activeTab === 'settings' ? 'bg-neon-500/10 text-neon-500' : 'text-graphite-400 hover:bg-graphite-800 hover:text-white'
                                 }`}>
-                                <Icons.Settings /><span>{t('settings')}</span>
+                                <Icons.User /><span>{t('settings')}</span>
                             </button>
                         </aside>
 
                         <div className="lg:pl-60">
                             <header className="bg-graphite-950/75 backdrop-blur-xl safe-top pb-3 px-4 sm:px-6 border-b border-graphite-800/60 sticky top-0 z-10">
                                 <div className="max-w-5xl mx-auto flex justify-between items-center">
-                                    <button onClick={() => setActiveTab('settings')} className="flex items-center gap-3 cursor-pointer">
-                                        <Avatar usuario={usuario} size={44} />
-                                        <div className="text-left">
-                                            <p className="text-[11px] text-graphite-400 leading-none">{t('hello')}</p>
-                                            <p className="text-sm font-bold text-white truncate max-w-[38vw] mt-1">{nombreUsuario}</p>
-                                        </div>
-                                    </button>
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] text-graphite-400 leading-none">{t('hello')}</p>
+                                        <p className="text-lg font-black text-white truncate max-w-[55vw] mt-1">{nombreUsuario}</p>
+                                    </div>
                                     <div className="flex items-center gap-3">
                                         <span className="lg:hidden text-xl font-black tracking-tight text-neon-500">RUKO</span>
-                                        <button onClick={() => setActiveTab('settings')} className={`glass-btn ${activeTab === 'settings' ? '!border-neon-500 !text-neon-500' : ''}`}><Icons.Settings /></button>
+                                        <div className="lg:hidden">
+                                            <button onClick={() => setActiveTab('settings')} className={`glass-btn ${activeTab === 'settings' ? '!border-neon-500 !text-neon-500' : ''}`}><Icons.User /></button>
+                                        </div>
                                     </div>
                                 </div>
                                 {crono.active && activeTab !== 'timer' && (
