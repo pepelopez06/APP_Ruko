@@ -12,7 +12,8 @@
             theme: {
                 extend: {
                     colors: {
-                        graphite: { 300: '#b4b9c0', 400: '#8a9099', 500: '#5b616a', 600: '#3a3f46', 700: '#2b2f35', 800: '#1f2226', 900: '#16181b', 950: '#0e0f11' },
+                        graphite: Object.fromEntries([300,400,500,600,700,800,900,950].map(n => [n, `rgb(var(--g${n}) / <alpha-value>)`])),
+                        ink: '#0e0f11',
                         neon: { 300: '#d4ff70', 400: '#b8ff2e', 500: '#a3ff12', 600: '#84cc16' }
                     }
                 }
@@ -26,7 +27,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        body { background-color: #0e0f11; color: white; -webkit-tap-highlight-color: transparent; }
+        body { background-color: rgb(var(--g950)); color: white; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         html, body { max-width: 100%; overflow-x: hidden; }
@@ -37,6 +38,11 @@
         input[type=number] { -moz-appearance: textfield; }
         .neon-glow { box-shadow: 0 0 18px rgba(163, 255, 18, 0.28); }
         @media (max-width: 1023px) { input, select, textarea { font-size: 16px !important; } }
+        :root { --g300: 180 185 192; --g400: 138 144 153; --g500: 91 97 106; --g600: 58 63 70; --g700: 43 47 53; --g800: 31 34 38; --g900: 22 24 27; --g950: 14 15 17; }
+        html.light { --g300: 58 63 70; --g400: 91 97 106; --g500: 138 144 153; --g600: 191 196 203; --g700: 213 217 222; --g800: 255 255 255; --g900: 244 245 247; --g950: 233 236 239; }
+        html.light .text-white, html.light .hover\:text-white:hover { color: #16181b; }
+        html.light .text-neon-500 { color: #4d7c0f; }
+        html.light .neon-glow { box-shadow: 0 0 14px rgba(132, 204, 22, 0.35); }
     </style>
 </head>
 <body class="bg-graphite-950 text-white">
@@ -59,13 +65,18 @@
             ChevronDown: () => <Svg><polyline points="6 9 12 15 18 9"/></Svg>,
             Settings: () => <Svg size={20}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Svg>,
             Calendar: () => <Svg><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></Svg>,
-            Check: () => <Svg size={14} sw={3}><polyline points="20 6 9 17 4 12"/></Svg>
+            Check: () => <Svg size={14} sw={3}><polyline points="20 6 9 17 4 12"/></Svg>,
+            Timer: () => <Svg><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></Svg>,
+            Play: () => <Svg size={18}><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></Svg>,
+            Pause: () => <Svg size={18}><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></Svg>,
+            Reset: () => <Svg size={18}><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></Svg>,
+            Flag: () => <Svg size={18}><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></Svg>
         };
 
         // ---------- Estilos reutilizables ----------
         const CARD = "bg-graphite-800 rounded-2xl shadow-lg border border-graphite-700";
         const INPUT = "bg-graphite-900 border border-graphite-700 rounded-xl text-white outline-none focus:border-neon-500 placeholder-graphite-500";
-        const BTN_NEON = "bg-neon-500 text-graphite-950 font-bold hover:bg-neon-400 transition-colors cursor-pointer";
+        const BTN_NEON = "bg-neon-500 text-ink font-bold hover:bg-neon-400 transition-colors cursor-pointer";
         const BTN_DANGER = "bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/30 transition-colors cursor-pointer";
         const ICON_BOX = "text-neon-500 bg-neon-500/10 p-3 rounded-full";
 
@@ -172,6 +183,7 @@
         // ENTRENAMIENTO
         // ====================================================
         const TrainingTab = ({ usuario }) => {
+            const { t, lang } = useT();
             const [trainingDays, setTrainingDays] = useState(4);
             const [isConfigOpen, setIsConfigOpen] = useState(false);
             const [currentDay, setCurrentDay] = useState(1);
@@ -303,7 +315,7 @@
             const month = now.getMonth();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
-            const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const monthNames = Array.from({ length: 12 }, (_, i) => { const m = new Date(2020, i, 1).toLocaleString(LOCALES[lang], { month: 'long' }); return m.charAt(0).toUpperCase() + m.slice(1); });
 
             const toggleAttendanceDay = (dayNum) => {
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
@@ -336,8 +348,8 @@
                             <div className="flex items-center space-x-3">
                                 <div className="bg-neon-500/10 text-neon-500 p-2 rounded-lg"><Icons.Settings /></div>
                                 <div>
-                                    <h2 className="text-base font-bold text-white">Configuración Semanal</h2>
-                                    <p className="text-xs text-graphite-400">{trainingDays} días de entrenamiento configurados</p>
+                                    <h2 className="text-base font-bold text-white">{t('weekCfg')}</h2>
+                                    <p className="text-xs text-graphite-400">{trainingDays} {t('daysConfigured')}</p>
                                 </div>
                             </div>
                             <div className={`transform transition-transform ${isConfigOpen ? 'rotate-180' : ''} text-graphite-400`}><Icons.ChevronDown /></div>
@@ -345,7 +357,7 @@
                         {isConfigOpen && (
                             <div className="p-4 bg-graphite-900/60 border-t border-graphite-700">
                                 <div className="flex items-center space-x-3 bg-graphite-900 p-3 rounded-xl border border-graphite-700">
-                                    <label className="text-sm font-medium text-graphite-300 w-full">¿Cuántos días vas a ir al gym?</label>
+                                    <label className="text-sm font-medium text-graphite-300 w-full">{t('askDays')}</label>
                                     <select
                                         value={trainingDays}
                                         onChange={(e) => {
@@ -354,7 +366,7 @@
                                         }}
                                         className="bg-graphite-800 text-white p-2 rounded outline-none border border-graphite-600 focus:border-neon-500 font-bold"
                                     >
-                                        {[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} Días</option>)}
+                                        {[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} {t('days')}</option>)}
                                     </select>
                                 </div>
                             </div>
@@ -366,12 +378,12 @@
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-2">
                                 <div className="text-neon-500 bg-neon-500/10 p-2 rounded-lg"><Icons.Calendar /></div>
-                                <h3 className="font-bold text-white text-sm">Asistencia: {monthNames[month]} {year}</h3>
+                                <h3 className="font-bold text-white text-sm">{t('attendance')}: {monthNames[month]} {year}</h3>
                             </div>
-                            <span className="text-xs text-graphite-400 hidden sm:block">Toca para marcar</span>
+                            <span className="text-xs text-graphite-400 hidden sm:block">{t('tapToMark')}</span>
                         </div>
                         <div className="grid grid-cols-7 gap-1.5 text-center">
-                            {['L', 'M', 'Mi', 'J', 'V', 'S', 'D'].map((d, i) => <span key={i} className="text-[10px] font-bold text-graphite-500 mb-1">{d}</span>)}
+                            {t('wd').map((d, i) => <span key={i} className="text-[10px] font-bold text-graphite-500 mb-1">{d}</span>)}
                             {Array.from({ length: firstDayIndex }, (_, i) => <div key={`empty-${i}`} />)}
                             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(dayNum => {
                                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
@@ -383,7 +395,7 @@
                                         onClick={() => toggleAttendanceDay(dayNum)}
                                         className={`h-9 sm:h-10 rounded-xl flex flex-col items-center justify-center text-xs font-bold transition-all border cursor-pointer ${
                                             isChecked
-                                                ? 'bg-neon-500 text-graphite-950 border-neon-400 neon-glow'
+                                                ? 'bg-neon-500 text-ink border-neon-400 neon-glow'
                                                 : 'bg-graphite-900 text-graphite-400 border-graphite-700 hover:border-graphite-500'
                                         }`}
                                     >
@@ -397,7 +409,7 @@
 
                     {/* Días de rutina */}
                     <div className="lg:col-span-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-graphite-400 mb-3">Tus Días de Rutina</h3>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-graphite-400 mb-3">{t('yourDays')}</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                             {Array.from({ length: trainingDays }, (_, i) => i + 1).map(day => (
                                 <div
@@ -405,13 +417,13 @@
                                     onClick={() => setCurrentDay(day)}
                                     className={`p-4 rounded-2xl flex flex-col justify-between transition-all duration-300 shadow-lg border cursor-pointer ${
                                         currentDay === day
-                                            ? 'bg-neon-500 text-graphite-950 border-neon-400 scale-[1.02] neon-glow'
+                                            ? 'bg-neon-500 text-ink border-neon-400 scale-[1.02] neon-glow'
                                             : 'bg-graphite-800 text-graphite-300 border-graphite-700 hover:bg-graphite-700/60'
                                     }`}
                                 >
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-xs uppercase font-bold tracking-wider opacity-90">Día {day}</span>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${currentDay === day ? 'bg-graphite-950/20' : 'bg-black/30'}`}>{(routines[day] || []).length} ejerc.</span>
+                                        <span className="text-xs uppercase font-bold tracking-wider opacity-90">{t('day')} {day}</span>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${currentDay === day ? 'bg-ink/20' : 'bg-black/30'}`}>{(routines[day] || []).length} {t('exShort')}</span>
                                     </div>
                                     <input
                                         type="text"
@@ -422,10 +434,10 @@
                                             localStorage.setItem('ruko_nombres_dias', JSON.stringify(nuevos));
                                         }}
                                         onClick={(e) => e.stopPropagation()}
-                                        placeholder="Nombre..."
+                                        placeholder={t('namePh')}
                                         className={`w-full font-bold text-sm px-2 py-1 rounded outline-none text-center border ${
                                             currentDay === day
-                                                ? 'bg-graphite-950/15 text-graphite-950 placeholder-graphite-700 border-graphite-950/30 focus:border-graphite-950'
+                                                ? 'bg-ink/15 text-ink placeholder-ink/60 border-ink/30 focus:border-ink'
                                                 : 'bg-black/20 text-white border-white/20 focus:border-neon-500'
                                         }`}
                                     />
@@ -435,15 +447,15 @@
                     </div>
 
                     <h3 className="lg:col-span-2 text-lg font-bold text-white mt-2 border-b border-graphite-700 pb-2 flex justify-between items-center">
-                        <span>Rutina: Día {currentDay} ({nombresDias[currentDay] || 'Sin Nombre'})</span>
-                        <span className="text-xs text-neon-500 font-normal">{activeRoutine.length} ejercicios</span>
+                        <span>{t('routine')}: {t('day')} {currentDay} ({nombresDias[currentDay] || t('noName')})</span>
+                        <span className="text-xs text-neon-500 font-normal">{activeRoutine.length} {t('exercises')}</span>
                     </h3>
 
                     {/* Ejercicios */}
                     <div className="space-y-4 lg:col-span-2 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:items-start">
                         {activeRoutine.length === 0 ? (
                             <div className="lg:col-span-2 text-center py-10 bg-graphite-800 rounded-2xl border border-graphite-700 border-dashed">
-                                <p className="text-graphite-400 text-sm">No hay ejercicios guardados en este día.</p>
+                                <p className="text-graphite-400 text-sm">{t('noEx')}</p>
                             </div>
                         ) : (
                             activeRoutine.map(exercise => (
@@ -451,7 +463,7 @@
                                     <div className="p-4 flex justify-between items-center gap-3 cursor-pointer hover:bg-graphite-700/30 transition-colors" onClick={() => toggleExpand(exercise.id)}>
                                         <h3 className="font-bold text-white text-base min-w-0">{exercise.name}</h3>
                                         <div className="flex items-center space-x-3 shrink-0">
-                                            <span className="text-xs bg-graphite-700 text-neon-500 px-2 py-1 rounded-full font-medium whitespace-nowrap">{exercise.sets.length} series</span>
+                                            <span className="text-xs bg-graphite-700 text-neon-500 px-2 py-1 rounded-full font-medium whitespace-nowrap">{exercise.sets.length} {t('sets')}</span>
                                             <div className={`transform transition-transform ${exercise.expanded ? 'rotate-180' : ''} text-graphite-400`}><Icons.ChevronDown /></div>
                                         </div>
                                     </div>
@@ -459,7 +471,7 @@
                                     {exercise.expanded && (
                                         <div className="p-4 bg-graphite-900/50 border-t border-graphite-700">
                                             <div className="grid grid-cols-12 gap-2 mb-2 text-xs font-semibold text-graphite-400 text-center px-1">
-                                                <div className="col-span-2">SET</div>
+                                                <div className="col-span-2">{t('setCap')}</div>
                                                 <div className="col-span-4">KG</div>
                                                 <div className="col-span-4">REPS</div>
                                                 <div className="col-span-2"></div>
@@ -481,8 +493,8 @@
                                                 </div>
                                             ))}
                                             <div className="flex space-x-2 mt-4">
-                                                <button onClick={() => addSet(exercise.id)} className="flex-1 py-2 rounded-xl text-sm font-bold bg-graphite-700 text-white hover:bg-graphite-600 transition-colors cursor-pointer">+ Añadir Serie</button>
-                                                <button onClick={() => removeExercise(exercise.dbId)} className={`py-2 px-4 rounded-xl text-sm font-bold ${BTN_DANGER}`}>Eliminar</button>
+                                                <button onClick={() => addSet(exercise.id)} className="flex-1 py-2 rounded-xl text-sm font-bold bg-graphite-700 text-white hover:bg-graphite-600 transition-colors cursor-pointer">{t('addSet')}</button>
+                                                <button onClick={() => removeExercise(exercise.dbId)} className={`py-2 px-4 rounded-xl text-sm font-bold ${BTN_DANGER}`}>{t('del')}</button>
                                             </div>
                                         </div>
                                     )}
@@ -496,23 +508,23 @@
                         className={`lg:col-span-2 w-full ${BTN_NEON} py-4 rounded-2xl neon-glow flex justify-center items-center space-x-2 mt-2`}
                     >
                         <Icons.Plus />
-                        <span>Explorar Base de Ejercicios del Gym</span>
+                        <span>{t('explore')}</span>
                     </button>
 
                     {isAddingDB && (
                         <div className={`lg:col-span-2 ${CARD} p-5 space-y-4`}>
                             <h3 className="text-white font-bold flex items-center justify-between">
-                                <span className="flex items-center text-neon-500"><Icons.Dumbbell /> <span className="ml-2 text-white">Selecciona un Músculo o Busca</span></span>
-                                <button onClick={() => setIsAddingDB(false)} className="text-xs text-graphite-400 hover:text-white cursor-pointer">Cerrar</button>
+                                <span className="flex items-center text-neon-500"><Icons.Dumbbell /> <span className="ml-2 text-white">{t('pickMuscle')}</span></span>
+                                <button onClick={() => setIsAddingDB(false)} className="text-xs text-graphite-400 hover:text-white cursor-pointer">{t('close')}</button>
                             </h3>
-                            <input type="text" placeholder="Busca un ejercicio..." value={busquedaEjercicio} onChange={(e) => setBusquedaEjercicio(e.target.value)}
+                            <input type="text" placeholder={t('searchEx')} value={busquedaEjercicio} onChange={(e) => setBusquedaEjercicio(e.target.value)}
                                 className={`w-full ${INPUT} px-4 py-2.5 text-sm`} />
                             {!busquedaEjercicio && (
                                 <div className="flex flex-wrap gap-2">
                                     {Object.keys(exerciseDatabase).map(muscle => (
                                         <button key={muscle} onClick={() => setSelectedMuscleGroup(muscle)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                                                selectedMuscleGroup === muscle ? 'bg-neon-500 text-graphite-950' : 'bg-graphite-700 text-graphite-300 hover:bg-graphite-600'
+                                                selectedMuscleGroup === muscle ? 'bg-neon-500 text-ink' : 'bg-graphite-700 text-graphite-300 hover:bg-graphite-600'
                                             }`}>
                                             {muscle}
                                         </button>
@@ -521,7 +533,7 @@
                             )}
                             <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2 hide-scrollbar lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
                                 {listaFiltrada.length === 0 ? (
-                                    <p className="text-xs text-graphite-400 text-center py-4 lg:col-span-2">No se encontraron ejercicios.</p>
+                                    <p className="text-xs text-graphite-400 text-center py-4 lg:col-span-2">{t('noResults')}</p>
                                 ) : (
                                     listaFiltrada.map((item, idx) => (
                                         <div key={idx} onClick={() => agregarEjercicioDirecto(item.ex)}
@@ -545,6 +557,7 @@
         // NUTRICIÓN
         // ====================================================
         const NutritionTab = ({ usuario, setUsuario }) => {
+            const { t } = useT();
             const [peso, setPeso] = useState(usuario.Peso || 75);
             const [altura, setAltura] = useState(usuario.Altura || 175);
             const [edad, setEdad] = useState(usuario.Edad || 20);
@@ -680,7 +693,7 @@
 
             const objBtn = (key, label) => (
                 <button onClick={() => { setObjetivo(key); guardarPerfil({ objetivo: key }); }}
-                    className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${objetivo === key ? 'bg-neon-500 text-graphite-950 neon-glow' : 'bg-graphite-900 text-graphite-400 border border-graphite-700'}`}>
+                    className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${objetivo === key ? 'bg-neon-500 text-ink neon-glow' : 'bg-graphite-900 text-graphite-400 border border-graphite-700'}`}>
                     {label}
                 </button>
             );
@@ -692,16 +705,16 @@
                         <div className="flex items-center space-x-3 mb-4">
                             <div className={ICON_BOX}><Icons.Apple /></div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Calculadora Nutricional</h2>
-                                <p className="text-graphite-400 text-sm">Basado en tus datos y nivel de actividad</p>
+                                <h2 className="text-xl font-bold text-white">{t('nutCalc')}</h2>
+                                <p className="text-graphite-400 text-sm">{t('nutCalcSub')}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-3 gap-3 mb-4">
                             {[
-                                ['Peso (kg)', peso, setPeso, 'peso'],
-                                ['Altura (cm)', altura, setAltura, 'altura'],
-                                ['Edad', edad, setEdad, 'edad']
+                                [t('weight'), peso, setPeso, 'peso'],
+                                [t('height'), altura, setAltura, 'altura'],
+                                [t('age'), edad, setEdad, 'edad']
                             ].map(([label, val, setter, key]) => (
                                 <div key={key}>
                                     <label className="text-xs text-graphite-400 block mb-1">{label}</label>
@@ -713,31 +726,31 @@
                         </div>
 
                         <div className="mb-4">
-                            <label className="text-xs text-graphite-400 block mb-1">Nivel de Actividad Física</label>
+                            <label className="text-xs text-graphite-400 block mb-1">{t('actLevel')}</label>
                             <select value={actividad} onChange={(e) => { const v = Number(e.target.value); setActividad(v); guardarPerfil({ actividad: v }); }}
                                 className={`w-full ${INPUT} p-2.5 text-sm font-bold`}>
-                                <option value={1.2}>Sedentario (poco o nada ejercicio)</option>
-                                <option value={1.375}>Ligero (ejercicio 1-3 días/sem)</option>
-                                <option value={1.55}>Moderado (ejercicio 3-5 días/sem)</option>
-                                <option value={1.725}>Intenso (ejercicio 6-7 días/sem)</option>
+                                <option value={1.2}>{t('act1')}</option>
+                                <option value={1.375}>{t('act2')}</option>
+                                <option value={1.55}>{t('act3')}</option>
+                                <option value={1.725}>{t('act4')}</option>
                             </select>
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 mb-4">
-                            {objBtn('definicion', 'Definición')}
-                            {objBtn('mantenimiento', 'Mantenimiento')}
-                            {objBtn('volumen', 'Volumen')}
+                            {objBtn('definicion', t('cut'))}
+                            {objBtn('mantenimiento', t('maint'))}
+                            {objBtn('volumen', t('bulk'))}
                         </div>
 
                         <div className="p-4 bg-graphite-900 rounded-xl border border-graphite-700 text-center mb-4">
-                            <span className="text-xs text-graphite-400 uppercase tracking-wider font-semibold">Meta Diaria Recomendada</span>
+                            <span className="text-xs text-graphite-400 uppercase tracking-wider font-semibold">{t('goal')}</span>
                             <p className="text-4xl font-black text-neon-500 mt-1">{caloriasMeta} <span className="text-sm font-normal text-graphite-400">kcal</span></p>
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700"><span className="text-[10px] text-graphite-400">Proteínas</span><p className="text-sm font-bold text-neon-500">{proteinasMeta}g</p></div>
-                            <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700"><span className="text-[10px] text-graphite-400">Carbohidratos</span><p className="text-sm font-bold text-white">{carbosMeta}g</p></div>
-                            <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700"><span className="text-[10px] text-graphite-400">Grasas</span><p className="text-sm font-bold text-graphite-300">{grasasMeta}g</p></div>
+                            <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700"><span className="text-[10px] text-graphite-400">{t('protein')}</span><p className="text-sm font-bold text-neon-500">{proteinasMeta}g</p></div>
+                            <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700"><span className="text-[10px] text-graphite-400">{t('carbs')}</span><p className="text-sm font-bold text-white">{carbosMeta}g</p></div>
+                            <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700"><span className="text-[10px] text-graphite-400">{t('fats')}</span><p className="text-sm font-bold text-graphite-300">{grasasMeta}g</p></div>
                         </div>
                     </div>
 
@@ -746,15 +759,15 @@
                         <div className="flex items-center space-x-3 mb-4">
                             <div className={ICON_BOX}><Icons.Utensils /></div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Registro Nutricional</h2>
-                                <p className="text-graphite-400 text-sm">Busca alimentos en la base de datos</p>
+                                <h2 className="text-xl font-bold text-white">{t('nutLog')}</h2>
+                                <p className="text-graphite-400 text-sm">{t('nutLogSub')}</p>
                             </div>
                         </div>
 
-                        <input type="text" placeholder="Escribe un alimento (ej. Asado, Alfajor, Arroz...)" value={busqueda} onChange={(e) => buscarAlimentos(e.target.value)}
+                        <input type="text" placeholder={t('foodPh')} value={busqueda} onChange={(e) => buscarAlimentos(e.target.value)}
                             className={`w-full ${INPUT} px-4 py-3 mb-4`} />
 
-                        {cargando && <p className="text-xs text-graphite-400 text-center py-2">Buscando en la base de datos...</p>}
+                        {cargando && <p className="text-xs text-graphite-400 text-center py-2">{t('searching')}</p>}
 
                         {alimentos.length > 0 && (
                             <div className="max-h-[50vh] lg:max-h-96 overflow-y-auto space-y-3 mb-6 bg-graphite-900/80 p-2 rounded-xl border border-graphite-700">
@@ -773,7 +786,7 @@
                                         <div key={itemId} className="p-3 bg-graphite-800 rounded-xl border border-graphite-700 space-y-3">
                                             <div>
                                                 <h4 className="text-white font-bold text-sm">{nom}</h4>
-                                                <p className="text-[10px] text-graphite-400">Base 100g/ml: {cal} kcal | P: {pro}g | C: {car}g | G: {gra}g</p>
+                                                <p className="text-[10px] text-graphite-400">{t('base100')}: {cal} kcal | P: {pro}g | C: {car}g | G: {gra}g</p>
                                             </div>
                                             <div className="grid grid-cols-12 gap-2 items-center pt-2 border-t border-graphite-700/60">
                                                 <div className="col-span-4">
@@ -783,14 +796,14 @@
                                                 <div className="col-span-4">
                                                     <select value={unidad} onChange={(e) => handleUnidadChange(itemId, e.target.value)}
                                                         className="w-full bg-graphite-900 text-neon-500 font-bold text-xs py-2 px-1 rounded-lg border border-graphite-600 outline-none">
-                                                        <option value="g">Gramos (g)</option>
-                                                        <option value="vasos">Vasos</option>
-                                                        <option value="cucharadas">Cucharadas</option>
+                                                        <option value="g">{t('grams')}</option>
+                                                        <option value="vasos">{t('glasses')}</option>
+                                                        <option value="cucharadas">{t('spoons')}</option>
                                                     </select>
                                                 </div>
                                                 <div className="col-span-4 text-right">
                                                     <span className="text-xs font-bold text-neon-500 block">{calc.calorias} kcal</span>
-                                                    <button onClick={() => agregarAlConsumo(item)} className={`w-full mt-1 ${BTN_NEON} text-[11px] py-1.5 rounded-lg`}>+ Agregar</button>
+                                                    <button onClick={() => agregarAlConsumo(item)} className={`w-full mt-1 ${BTN_NEON} text-[11px] py-1.5 rounded-lg`}>{t('add')}</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -800,11 +813,11 @@
                         )}
 
                         <div className="mt-6 border-t border-graphite-700 pt-4">
-                            <h3 className="text-white font-bold mb-3">Consumo de Hoy</h3>
+                            <h3 className="text-white font-bold mb-3">{t('todayIntake')}</h3>
 
                             <div className="mb-4">
                                 <div className="flex justify-between text-xs mb-1.5">
-                                    <span className="text-graphite-400">Calorías</span>
+                                    <span className="text-graphite-400">{t('calories')}</span>
                                     <span className="font-bold text-neon-500">{Math.round(totalCalorias)} <span className="text-graphite-400 font-normal">/ {caloriasMeta} kcal</span></span>
                                 </div>
                                 <div className="h-2 bg-graphite-900 rounded-full overflow-hidden border border-graphite-700">
@@ -813,14 +826,14 @@
                             </div>
 
                             <div className="grid grid-cols-3 gap-2 mb-4">
-                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">Proteínas</span><p className="text-sm font-bold text-neon-500">{totalProteinas.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {proteinasMeta}g</span></p></div>
-                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">Carbos</span><p className="text-sm font-bold text-white">{totalCarbos.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {carbosMeta}g</span></p></div>
-                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">Grasas</span><p className="text-sm font-bold text-graphite-300">{totalGrasas.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {grasasMeta}g</span></p></div>
+                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">{t('protein')}</span><p className="text-sm font-bold text-neon-500">{totalProteinas.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {proteinasMeta}g</span></p></div>
+                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">{t('carbsShort')}</span><p className="text-sm font-bold text-white">{totalCarbos.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {carbosMeta}g</span></p></div>
+                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">{t('fats')}</span><p className="text-sm font-bold text-graphite-300">{totalGrasas.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {grasasMeta}g</span></p></div>
                             </div>
 
                             <div className="space-y-2">
                                 {alimentosConsumidos.length === 0 ? (
-                                    <p className="text-xs text-graphite-500 text-center py-2">No has agregado alimentos hoy.</p>
+                                    <p className="text-xs text-graphite-500 text-center py-2">{t('noFood')}</p>
                                 ) : (
                                     alimentosConsumidos.map((c) => {
                                         const cId = c.id || c.Id;
@@ -851,6 +864,7 @@
         // PROGRESO
         // ====================================================
         const ProgressTab = ({ usuario }) => {
+            const { t } = useT();
             const [routines, setRoutines] = useState({});
             const [selectedDay, setSelectedDay] = useState(1);
             const [selectedExercise, setSelectedExercise] = useState('');
@@ -896,12 +910,15 @@
                 const labels = historialData.map(i => (i.fecha || i.Fecha).split('T')[0]);
                 const pesos = historialData.map(i => i.pesomaximo !== undefined ? i.pesomaximo : i.PesoMaximo);
 
+                const light = document.documentElement.classList.contains('light');
+                const gridC = light ? '#d5d9de' : '#2b2f35';
+                const tickC = light ? '#5b616a' : '#8a9099';
                 chartInstance.current = new Chart(chartRef.current, {
                     type: 'line',
                     data: {
                         labels,
                         datasets: [{
-                            label: 'Peso Máximo del Día (kg)',
+                            label: t('chartLabel'),
                             data: pesos,
                             borderColor: '#a3ff12',
                             backgroundColor: 'rgba(163, 255, 18, 0.15)',
@@ -909,7 +926,7 @@
                             fill: true,
                             tension: 0,
                             pointBackgroundColor: '#a3ff12',
-                            pointBorderColor: '#0e0f11',
+                            pointBorderColor: light ? '#ffffff' : '#0e0f11',
                             pointRadius: 6,
                             pointHoverRadius: 8
                         }]
@@ -919,8 +936,8 @@
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
                         scales: {
-                            x: { grid: { color: '#2b2f35' }, ticks: { color: '#8a9099' } },
-                            y: { grid: { color: '#2b2f35' }, ticks: { color: '#8a9099' } }
+                            x: { grid: { color: gridC }, ticks: { color: tickC } },
+                            y: { grid: { color: gridC }, ticks: { color: tickC } }
                         }
                     }
                 });
@@ -936,25 +953,25 @@
                         <div className="flex items-center space-x-3 mb-4">
                             <div className={ICON_BOX}><Icons.TrendingUp /></div>
                             <div>
-                                <h2 className="text-xl font-bold text-white">Evolución de Cargas</h2>
-                                <p className="text-graphite-400 text-sm">Polígono de frecuencias por sesión de entrenamiento</p>
+                                <h2 className="text-xl font-bold text-white">{t('evoTitle')}</h2>
+                                <p className="text-graphite-400 text-sm">{t('evoSub')}</p>
                             </div>
                         </div>
 
                         <div className="mb-4">
-                            <label className="text-xs text-graphite-400 block mb-1">Seleccionar Día de Rutina</label>
+                            <label className="text-xs text-graphite-400 block mb-1">{t('selDay')}</label>
                             <div className="flex flex-wrap gap-2">
                                 {diasDisponibles.length === 0 ? (
-                                    <p className="text-xs text-graphite-500">No hay rutinas creadas todavía.</p>
+                                    <p className="text-xs text-graphite-500">{t('noRoutines')}</p>
                                 ) : (
                                     diasDisponibles.map(dia => (
                                         <button key={dia} onClick={() => handleDayChange(Number(dia))}
                                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                                 selectedDay === Number(dia)
-                                                    ? 'bg-neon-500 text-graphite-950 neon-glow'
+                                                    ? 'bg-neon-500 text-ink neon-glow'
                                                     : 'bg-graphite-900 text-graphite-400 border border-graphite-700 hover:border-graphite-500'
                                             }`}>
-                                            Día {dia}
+                                            {t('day')} {dia}
                                         </button>
                                     ))
                                 )}
@@ -962,11 +979,11 @@
                         </div>
 
                         <div className="mb-6">
-                            <label className="text-xs text-graphite-400 block mb-1">Seleccionar Ejercicio</label>
+                            <label className="text-xs text-graphite-400 block mb-1">{t('selEx')}</label>
                             <select value={selectedExercise} onChange={(e) => setSelectedExercise(e.target.value)}
                                 className={`w-full ${INPUT} p-3 text-sm font-bold`}>
                                 {ejerciciosDelDia.length === 0 ? (
-                                    <option value="">No hay ejercicios en este día</option>
+                                    <option value="">{t('noExDay')}</option>
                                 ) : (
                                     ejerciciosDelDia.map((ejer, idx) => <option key={idx} value={ejer}>{ejer}</option>)
                                 )}
@@ -975,12 +992,444 @@
 
                         <div className="bg-graphite-900 p-4 rounded-xl border border-graphite-700">
                             {!selectedExercise || historialData.length === 0 ? (
-                                <p className="text-center text-graphite-500 py-10 text-xs">Entrená y anotá tus pesos en la rutina para ver tu polígono de frecuencias.</p>
+                                <p className="text-center text-graphite-500 py-10 text-xs">{t('progEmpty')}</p>
                             ) : (
                                 <div className="relative h-64 sm:h-80 lg:h-96"><canvas ref={chartRef}></canvas></div>
                             )}
                         </div>
                     </div>
+                </div>
+            );
+        };
+
+        // ====================================================
+        // I18N (es / pt / en)
+        // ====================================================
+        const DICT = {
+            es: {
+                weekCfg: 'Configuración Semanal', daysConfigured: 'días de entrenamiento configurados', askDays: '¿Cuántos días vas a ir al gym?', days: 'Días',
+                attendance: 'Asistencia', tapToMark: 'Toca para marcar', wd: ['L', 'M', 'Mi', 'J', 'V', 'S', 'D'], yourDays: 'Tus Días de Rutina', day: 'Día', exShort: 'ejerc.',
+                namePh: 'Nombre...', routine: 'Rutina', noName: 'Sin Nombre', exercises: 'ejercicios', noEx: 'No hay ejercicios guardados en este día.', sets: 'series', setCap: 'SET',
+                addSet: '+ Añadir Serie', del: 'Eliminar', explore: 'Explorar Base de Ejercicios del Gym', pickMuscle: 'Selecciona un Músculo o Busca', close: 'Cerrar',
+                searchEx: 'Busca un ejercicio...', noResults: 'No se encontraron ejercicios.',
+                nutCalc: 'Calculadora Nutricional', nutCalcSub: 'Basado en tus datos y nivel de actividad', weight: 'Peso (kg)', height: 'Altura (cm)', age: 'Edad',
+                actLevel: 'Nivel de Actividad Física', act1: 'Sedentario (poco o nada ejercicio)', act2: 'Ligero (ejercicio 1-3 días/sem)', act3: 'Moderado (ejercicio 3-5 días/sem)', act4: 'Intenso (ejercicio 6-7 días/sem)',
+                cut: 'Definición', maint: 'Mantenimiento', bulk: 'Volumen', goal: 'Meta Diaria Recomendada', protein: 'Proteínas', carbs: 'Carbohidratos', fats: 'Grasas', carbsShort: 'Carbos',
+                nutLog: 'Registro Nutricional', nutLogSub: 'Busca alimentos en la base de datos', foodPh: 'Escribe un alimento (ej. Asado, Alfajor, Arroz...)', searching: 'Buscando en la base de datos...',
+                base100: 'Base 100g/ml', grams: 'Gramos (g)', glasses: 'Vasos', spoons: 'Cucharadas', add: '+ Agregar', todayIntake: 'Consumo de Hoy', calories: 'Calorías', noFood: 'No has agregado alimentos hoy.',
+                evoTitle: 'Evolución de Cargas', evoSub: 'Polígono de frecuencias por sesión de entrenamiento', selDay: 'Seleccionar Día de Rutina', noRoutines: 'No hay rutinas creadas todavía.',
+                selEx: 'Seleccionar Ejercicio', noExDay: 'No hay ejercicios en este día', progEmpty: 'Entrená y anotá tus pesos en la rutina para ver tu polígono de frecuencias.', chartLabel: 'Peso Máximo del Día (kg)',
+                hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
+                yourName: 'Tu Nombre', password: 'Contraseña', login: 'Iniciar Sesión', register: 'Registrarse', noAcc: '¿No tenés cuenta? Registrate acá', haveAcc: '¿Ya tenés cuenta? Iniciá sesión',
+                errCreds: 'Credenciales inválidas.', errConn: 'No se pudo conectar con el servidor.', regOk: '¡Registrado con éxito! Ahora inicia sesión.', regErr: 'Error al registrarse.',
+                tmSub: 'Sigue corriendo aunque uses el resto de la app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', lap: 'Vuelta', laps: 'Vueltas',
+                running: 'Cronómetro en marcha', paused: 'Cronómetro en pausa', noLaps: 'Todavía no hay vueltas.',
+                profile: 'Datos del usuario', changePhoto: 'Cambiar foto', save: 'Guardar', saved: '¡Guardado!', pwTitle: 'Cambiar contraseña', pwCurrent: 'Contraseña actual', pwNew: 'Nueva contraseña',
+                pwRepeat: 'Repetir nueva contraseña', pwUpdate: 'Actualizar contraseña', pwOk: 'Contraseña actualizada.', pwMismatch: 'Las contraseñas no coinciden.', pwShort: 'Mínimo 6 caracteres.',
+                pwWrong: 'La contraseña actual es incorrecta.', pwErr: 'No se pudo actualizar.',
+                theme: 'Tema', dark: 'Oscuro', light: 'Claro', language: 'Idioma', notifications: 'Notificaciones', notifSub: 'Aviso del cronómetro en segundo plano',
+                notifDenied: 'El navegador bloqueó los permisos de notificación.', notifUnsupported: 'Tu navegador no soporta notificaciones.',
+                how: 'Cómo funciona', howSub: 'Conocé la app en menos de un minuto', next: 'Siguiente', prev: 'Atrás', done: 'Listo',
+                h1t: 'Rutinas', h1d: 'Elegí cuántos días entrenás, nombrá cada día y sumá ejercicios desde la base. Anotá kg y repeticiones: se guarda solo.',
+                h2t: 'Asistencia', h2d: 'Tocá un día del calendario para marcar que entrenaste. Tocalo de nuevo para desmarcarlo.',
+                h3t: 'Nutrición', h3d: 'Cargá tu peso, altura y edad para ver tu meta de calorías y macros. Buscá alimentos y registrá lo que comés.',
+                h4t: 'Progreso', h4d: 'Elegí un ejercicio y mirá cómo evoluciona tu peso máximo sesión a sesión.',
+                h5t: 'Cronómetro', h5d: 'Iniciá el cronómetro y seguí usando la app: un aviso arriba te muestra el tiempo y te lleva de vuelta al tocarlo.'
+            },
+            pt: {
+                weekCfg: 'Configuração Semanal', daysConfigured: 'dias de treino configurados', askDays: 'Quantos dias você vai à academia?', days: 'Dias',
+                attendance: 'Presença', tapToMark: 'Toque para marcar', wd: ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'], yourDays: 'Seus Dias de Treino', day: 'Dia', exShort: 'exerc.',
+                namePh: 'Nome...', routine: 'Treino', noName: 'Sem Nome', exercises: 'exercícios', noEx: 'Não há exercícios salvos neste dia.', sets: 'séries', setCap: 'SÉRIE',
+                addSet: '+ Adicionar Série', del: 'Excluir', explore: 'Explorar Banco de Exercícios', pickMuscle: 'Escolha um Músculo ou Busque', close: 'Fechar',
+                searchEx: 'Busque um exercício...', noResults: 'Nenhum exercício encontrado.',
+                nutCalc: 'Calculadora Nutricional', nutCalcSub: 'Com base nos seus dados e nível de atividade', weight: 'Peso (kg)', height: 'Altura (cm)', age: 'Idade',
+                actLevel: 'Nível de Atividade Física', act1: 'Sedentário (pouco ou nenhum exercício)', act2: 'Leve (exercício 1-3 dias/sem)', act3: 'Moderado (exercício 3-5 dias/sem)', act4: 'Intenso (exercício 6-7 dias/sem)',
+                cut: 'Definição', maint: 'Manutenção', bulk: 'Volume', goal: 'Meta Diária Recomendada', protein: 'Proteínas', carbs: 'Carboidratos', fats: 'Gorduras', carbsShort: 'Carbos',
+                nutLog: 'Registro Nutricional', nutLogSub: 'Busque alimentos no banco de dados', foodPh: 'Digite um alimento (ex. Churrasco, Arroz...)', searching: 'Buscando no banco de dados...',
+                base100: 'Base 100g/ml', grams: 'Gramas (g)', glasses: 'Copos', spoons: 'Colheres', add: '+ Adicionar', todayIntake: 'Consumo de Hoje', calories: 'Calorias', noFood: 'Você não adicionou alimentos hoje.',
+                evoTitle: 'Evolução das Cargas', evoSub: 'Polígono de frequências por sessão de treino', selDay: 'Selecionar Dia de Treino', noRoutines: 'Ainda não há treinos criados.',
+                selEx: 'Selecionar Exercício', noExDay: 'Não há exercícios neste dia', progEmpty: 'Treine e anote suas cargas para ver seu polígono de frequências.', chartLabel: 'Carga Máxima do Dia (kg)',
+                hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
+                yourName: 'Seu Nome', password: 'Senha', login: 'Entrar', register: 'Cadastrar', noAcc: 'Não tem conta? Cadastre-se aqui', haveAcc: 'Já tem conta? Entre',
+                errCreds: 'Credenciais inválidas.', errConn: 'Não foi possível conectar ao servidor.', regOk: 'Cadastro concluído! Agora faça login.', regErr: 'Erro ao cadastrar.',
+                tmSub: 'Continua contando enquanto você usa o resto do app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Zerar', lap: 'Volta', laps: 'Voltas',
+                running: 'Cronômetro em andamento', paused: 'Cronômetro pausado', noLaps: 'Ainda não há voltas.',
+                profile: 'Dados do usuário', changePhoto: 'Alterar foto', save: 'Salvar', saved: 'Salvo!', pwTitle: 'Alterar senha', pwCurrent: 'Senha atual', pwNew: 'Nova senha',
+                pwRepeat: 'Repita a nova senha', pwUpdate: 'Atualizar senha', pwOk: 'Senha atualizada.', pwMismatch: 'As senhas não coincidem.', pwShort: 'Mínimo de 6 caracteres.',
+                pwWrong: 'A senha atual está incorreta.', pwErr: 'Não foi possível atualizar.',
+                theme: 'Tema', dark: 'Escuro', light: 'Claro', language: 'Idioma', notifications: 'Notificações', notifSub: 'Aviso do cronômetro em segundo plano',
+                notifDenied: 'O navegador bloqueou as notificações.', notifUnsupported: 'Seu navegador não suporta notificações.',
+                how: 'Como funciona', howSub: 'Conheça o app em menos de um minuto', next: 'Próximo', prev: 'Voltar', done: 'Pronto',
+                h1t: 'Treinos', h1d: 'Escolha quantos dias treina, dê nome a cada dia e adicione exercícios do banco. Anote kg e repetições: salva sozinho.',
+                h2t: 'Presença', h2d: 'Toque em um dia do calendário para marcar que treinou. Toque de novo para desmarcar.',
+                h3t: 'Nutrição', h3d: 'Informe peso, altura e idade para ver sua meta de calorias e macros. Busque alimentos e registre o que come.',
+                h4t: 'Progresso', h4d: 'Escolha um exercício e veja como sua carga máxima evolui sessão a sessão.',
+                h5t: 'Cronômetro', h5d: 'Inicie o cronômetro e continue usando o app: um aviso no topo mostra o tempo e leva você de volta ao tocar.'
+            },
+            en: {
+                weekCfg: 'Weekly Setup', daysConfigured: 'training days configured', askDays: 'How many days will you hit the gym?', days: 'Days',
+                attendance: 'Attendance', tapToMark: 'Tap to mark', wd: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], yourDays: 'Your Workout Days', day: 'Day', exShort: 'ex.',
+                namePh: 'Name...', routine: 'Workout', noName: 'Unnamed', exercises: 'exercises', noEx: 'No exercises saved for this day.', sets: 'sets', setCap: 'SET',
+                addSet: '+ Add Set', del: 'Delete', explore: 'Browse Exercise Library', pickMuscle: 'Pick a Muscle or Search', close: 'Close',
+                searchEx: 'Search an exercise...', noResults: 'No exercises found.',
+                nutCalc: 'Nutrition Calculator', nutCalcSub: 'Based on your data and activity level', weight: 'Weight (kg)', height: 'Height (cm)', age: 'Age',
+                actLevel: 'Physical Activity Level', act1: 'Sedentary (little or no exercise)', act2: 'Light (exercise 1-3 days/wk)', act3: 'Moderate (exercise 3-5 days/wk)', act4: 'Intense (exercise 6-7 days/wk)',
+                cut: 'Cutting', maint: 'Maintenance', bulk: 'Bulking', goal: 'Recommended Daily Goal', protein: 'Protein', carbs: 'Carbs', fats: 'Fats', carbsShort: 'Carbs',
+                nutLog: 'Food Log', nutLogSub: 'Search foods in the database', foodPh: 'Type a food (e.g. Steak, Rice...)', searching: 'Searching the database...',
+                base100: 'Per 100g/ml', grams: 'Grams (g)', glasses: 'Glasses', spoons: 'Tablespoons', add: '+ Add', todayIntake: "Today's Intake", calories: 'Calories', noFood: "You haven't added any food today.",
+                evoTitle: 'Load Progress', evoSub: 'Frequency polygon per training session', selDay: 'Select Workout Day', noRoutines: 'No workouts created yet.',
+                selEx: 'Select Exercise', noExDay: 'No exercises on this day', progEmpty: 'Train and log your weights to see your frequency polygon.', chartLabel: 'Daily Max Weight (kg)',
+                hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
+                yourName: 'Your Name', password: 'Password', login: 'Log In', register: 'Sign Up', noAcc: "Don't have an account? Sign up here", haveAcc: 'Already have an account? Log in',
+                errCreds: 'Invalid credentials.', errConn: 'Could not connect to the server.', regOk: 'Signed up successfully! Now log in.', regErr: 'Sign-up error.',
+                tmSub: 'Keeps running while you use the rest of the app', start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset', lap: 'Lap', laps: 'Laps',
+                running: 'Stopwatch running', paused: 'Stopwatch paused', noLaps: 'No laps yet.',
+                profile: 'User details', changePhoto: 'Change photo', save: 'Save', saved: 'Saved!', pwTitle: 'Change password', pwCurrent: 'Current password', pwNew: 'New password',
+                pwRepeat: 'Repeat new password', pwUpdate: 'Update password', pwOk: 'Password updated.', pwMismatch: "Passwords don't match.", pwShort: 'At least 6 characters.',
+                pwWrong: 'Current password is incorrect.', pwErr: 'Could not update.',
+                theme: 'Theme', dark: 'Dark', light: 'Light', language: 'Language', notifications: 'Notifications', notifSub: 'Stopwatch alert in the background',
+                notifDenied: 'The browser blocked notification permission.', notifUnsupported: "Your browser doesn't support notifications.",
+                how: 'How it works', howSub: 'Learn the app in under a minute', next: 'Next', prev: 'Back', done: 'Done',
+                h1t: 'Workouts', h1d: 'Pick how many days you train, name each day and add exercises from the library. Log kg and reps: it saves automatically.',
+                h2t: 'Attendance', h2d: 'Tap a calendar day to mark that you trained. Tap it again to unmark.',
+                h3t: 'Nutrition', h3d: 'Enter your weight, height and age to see your calorie and macro goals. Search foods and log what you eat.',
+                h4t: 'Progress', h4d: 'Pick an exercise and watch your max weight evolve session by session.',
+                h5t: 'Stopwatch', h5d: 'Start the stopwatch and keep using the app: a banner on top shows the time and takes you back when tapped.'
+            }
+        };
+        const LOCALES = { es: 'es-AR', pt: 'pt-BR', en: 'en-US' };
+        const makeT = (lang) => (k) => {
+            const v = DICT[lang] && DICT[lang][k];
+            return v !== undefined ? v : (DICT.es[k] !== undefined ? DICT.es[k] : k);
+        };
+        const LangCtx = React.createContext({ t: makeT('es'), lang: 'es' });
+        const useT = () => React.useContext(LangCtx);
+        const detectLang = () => {
+            const l = (navigator.language || 'es').slice(0, 2);
+            return ['es', 'pt', 'en'].includes(l) ? l : 'es';
+        };
+
+        // ====================================================
+        // CRONÓMETRO (persistente: guarda startedAt y calcula con Date.now())
+        // ====================================================
+        const CRONO_KEY = 'ruko_crono';
+        const EMPTY_CRONO = { startedAt: null, acc: 0, laps: [] };
+        const readCrono = () => {
+            try { return { ...EMPTY_CRONO, ...JSON.parse(localStorage.getItem(CRONO_KEY)) }; }
+            catch (e) { return { ...EMPTY_CRONO }; }
+        };
+        const fmtTime = (ms) => {
+            const s = Math.floor(ms / 1000);
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            const mm = String(m).padStart(2, '0'), ss = String(sec).padStart(2, '0');
+            return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+        };
+        // Solo el componente que lo usa se re-renderiza en cada tick
+        const useElapsed = (c, every) => {
+            const [now, setNow] = useState(Date.now());
+            useEffect(() => {
+                setNow(Date.now());
+                if (!c.startedAt) return;
+                const id = setInterval(() => setNow(Date.now()), every);
+                const onVis = () => setNow(Date.now());
+                document.addEventListener('visibilitychange', onVis);
+                return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVis); };
+            }, [c.startedAt, every]);
+            return c.acc + (c.startedAt ? Math.max(0, now - c.startedAt) : 0);
+        };
+        const useCrono = () => {
+            const [c, setC] = useState(readCrono);
+            const persist = (n) => { localStorage.setItem(CRONO_KEY, JSON.stringify(n)); setC(n); };
+            const elapsedNow = () => c.acc + (c.startedAt ? Date.now() - c.startedAt : 0);
+            return {
+                c,
+                running: !!c.startedAt,
+                active: !!c.startedAt || c.acc > 0,
+                start: () => persist({ ...c, startedAt: Date.now() }),
+                pause: () => persist({ ...c, startedAt: null, acc: elapsedNow() }),
+                reset: () => persist({ ...EMPTY_CRONO }),
+                lap: () => persist({ ...c, laps: [...c.laps, elapsedNow()] })
+            };
+        };
+
+        const CronoEffects = ({ c, notifEnabled, label }) => {
+            const el = useElapsed(c, 1000);
+            useEffect(() => { document.title = c.startedAt ? `⏱ ${fmtTime(el)} · RUKO` : 'RUKO'; }, [el, c.startedAt]);
+            useEffect(() => () => { document.title = 'RUKO'; }, []);
+            useEffect(() => {
+                const onHide = () => {
+                    if (!document.hidden || !c.startedAt || !notifEnabled) return;
+                    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+                    try { new Notification('RUKO', { body: `${label}: ${fmtTime(c.acc + Date.now() - c.startedAt)}`, tag: 'ruko-crono' }); } catch (e) {}
+                };
+                document.addEventListener('visibilitychange', onHide);
+                return () => document.removeEventListener('visibilitychange', onHide);
+            }, [c.startedAt, c.acc, notifEnabled, label]);
+            return null;
+        };
+
+        const CronoBanner = ({ c, onClick, label }) => {
+            const el = useElapsed(c, 1000);
+            return (
+                <button onClick={onClick} className="max-w-5xl mx-auto mt-3 w-full flex items-center justify-between bg-neon-500 text-ink rounded-xl px-4 py-2 text-sm font-bold neon-glow cursor-pointer">
+                    <span className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full bg-ink ${c.startedAt ? 'animate-pulse' : 'opacity-40'}`}></span>{label}
+                    </span>
+                    <span className="tabular-nums">{fmtTime(el)}</span>
+                </button>
+            );
+        };
+
+        const BigTime = ({ c }) => {
+            const el = useElapsed(c, 50);
+            const cs = String(Math.floor((el % 1000) / 10)).padStart(2, '0');
+            return (
+                <div className="text-center tabular-nums">
+                    <span className="text-6xl sm:text-7xl font-black text-neon-500">{fmtTime(el)}</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-graphite-400">.{cs}</span>
+                </div>
+            );
+        };
+
+        const TimerTab = ({ crono }) => {
+            const { t } = useT();
+            const { c, running, active } = crono;
+            const lapsRev = c.laps.map((total, i) => ({ n: i + 1, total, split: total - (i > 0 ? c.laps[i - 1] : 0) })).reverse();
+            const sm = "py-3 rounded-xl bg-graphite-700 text-white font-bold text-sm disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5";
+            return (
+                <div className="max-w-md mx-auto space-y-6 pb-24 lg:pb-4">
+                    <div className={`${CARD} p-6`}>
+                        <div className="flex items-center space-x-3 mb-8">
+                            <div className={ICON_BOX}><Icons.Timer /></div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">{t('navTimer')}</h2>
+                                <p className="text-graphite-400 text-sm">{t('tmSub')}</p>
+                            </div>
+                        </div>
+                        <BigTime c={c} />
+                        <div className="grid grid-cols-3 gap-3 mt-8">
+                            <button onClick={crono.reset} disabled={!active} className={sm}><Icons.Reset />{t('reset')}</button>
+                            <button onClick={running ? crono.pause : crono.start} className={`${BTN_NEON} py-3 rounded-xl text-sm neon-glow flex items-center justify-center gap-1.5`}>
+                                {running ? <Icons.Pause /> : <Icons.Play />}{running ? t('pause') : (c.acc > 0 ? t('resume') : t('start'))}
+                            </button>
+                            <button onClick={crono.lap} disabled={!running} className={sm}><Icons.Flag />{t('lap')}</button>
+                        </div>
+                    </div>
+                    <div className={`${CARD} p-5`}>
+                        <h3 className="text-white font-bold mb-3">{t('laps')}</h3>
+                        {lapsRev.length === 0 ? (
+                            <p className="text-xs text-graphite-500 text-center py-2">{t('noLaps')}</p>
+                        ) : (
+                            <div className="space-y-2 max-h-72 overflow-y-auto hide-scrollbar">
+                                {lapsRev.map(l => (
+                                    <div key={l.n} className="flex justify-between items-center bg-graphite-900 px-3 py-2 rounded-xl border border-graphite-700/50 text-sm tabular-nums">
+                                        <span className="text-graphite-400 font-bold">#{l.n}</span>
+                                        <span className="text-neon-500 font-bold">+{fmtTime(l.split)}</span>
+                                        <span className="text-white">{fmtTime(l.total)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // ====================================================
+        // AJUSTES
+        // ====================================================
+        const Avatar = ({ usuario, size = 36 }) => {
+            const foto = usuario.Foto || usuario.foto;
+            const nombre = usuario.nombre || usuario.Nombre || '?';
+            return foto ? (
+                <img src={foto} alt="" style={{ width: size, height: size }} className="rounded-full object-cover border border-neon-500/50 shrink-0" />
+            ) : (
+                <div style={{ width: size, height: size }} className="rounded-full bg-neon-500 text-ink font-black flex items-center justify-center shrink-0">
+                    <span style={{ fontSize: size * 0.42 }}>{nombre.charAt(0).toUpperCase()}</span>
+                </div>
+            );
+        };
+
+        const Switch = ({ on, onChange }) => (
+            <button onClick={onChange} className={`w-12 h-7 rounded-full p-1 transition-colors cursor-pointer shrink-0 ${on ? 'bg-neon-500' : 'bg-graphite-600'}`}>
+                <span className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : ''}`}></span>
+            </button>
+        );
+
+        const Seg = ({ options, value, onChange }) => (
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+                {options.map(([v, l]) => (
+                    <button key={v} onClick={() => onChange(v)}
+                        className={`py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${value === v ? 'bg-neon-500 text-ink neon-glow' : 'bg-graphite-900 text-graphite-400 border border-graphite-700'}`}>
+                        {l}
+                    </button>
+                ))}
+            </div>
+        );
+
+        const HowModal = ({ onClose }) => {
+            const { t } = useT();
+            const [i, setI] = useState(0);
+            const total = 5;
+            const StepIcon = [Icons.Dumbbell, Icons.Calendar, Icons.Apple, Icons.TrendingUp, Icons.Timer][i];
+            return (
+                <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+                    <div className={`${CARD} w-full max-w-md p-6`} onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-5">
+                            <h3 className="text-white font-bold">{t('how')}</h3>
+                            <button onClick={onClose} className="text-xs text-graphite-400 hover:text-white cursor-pointer">{t('close')}</button>
+                        </div>
+                        <div className="text-center py-4 min-h-[190px]">
+                            <div className="inline-flex text-neon-500 bg-neon-500/10 p-4 rounded-full mb-4"><StepIcon /></div>
+                            <h4 className="text-xl font-bold text-white mb-2">{t(`h${i + 1}t`)}</h4>
+                            <p className="text-sm text-graphite-300 leading-relaxed">{t(`h${i + 1}d`)}</p>
+                        </div>
+                        <div className="flex justify-center gap-1.5 mb-5">
+                            {Array.from({ length: total }, (_, k) => (
+                                <span key={k} className={`h-1.5 rounded-full transition-all ${k === i ? 'w-6 bg-neon-500' : 'w-1.5 bg-graphite-600'}`}></span>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0} className="py-3 rounded-xl bg-graphite-700 text-white font-bold text-sm disabled:opacity-40 cursor-pointer">{t('prev')}</button>
+                            <button onClick={() => (i === total - 1 ? onClose() : setI(i + 1))} className={`${BTN_NEON} py-3 rounded-xl text-sm`}>{i === total - 1 ? t('done') : t('next')}</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const SettingsTab = ({ usuario, setUsuario, theme, setTheme, lang, setLang, notif, toggleNotif, onLogout }) => {
+            const { t } = useT();
+            const [peso, setPeso] = useState(usuario.Peso || 75);
+            const [altura, setAltura] = useState(usuario.Altura || 175);
+            const [edad, setEdad] = useState(usuario.Edad || 20);
+            const [flash, setFlash] = useState('');
+            const [pw, setPw] = useState({ a: '', n: '', r: '' });
+            const [pwMsg, setPwMsg] = useState(null);
+            const [howOpen, setHowOpen] = useState(false);
+            const fileRef = useRef(null);
+            const headers = { 'Content-Type': 'application/json' };
+
+            const persistUser = (u) => { localStorage.setItem('fitpro_usuario', JSON.stringify(u)); setUsuario(u); };
+
+            const saveProfile = () => {
+                const p = Number(peso), a = Number(altura), e = Number(edad);
+                fetch(`/api/usuario/${usuario.Id}`, {
+                    method: 'PUT', headers,
+                    body: JSON.stringify({ peso: p, altura: a, edad: e, actividad: usuario.Actividad || 1.55, objetivo: usuario.Objetivo || 'mantenimiento' })
+                })
+                    .then(r => r.json())
+                    .then(() => {
+                        persistUser({ ...usuario, Peso: p, peso: p, Altura: a, altura: a, Edad: e, edad: e });
+                        setFlash(t('saved'));
+                        setTimeout(() => setFlash(''), 2000);
+                    })
+                    .catch(err => console.error("Error al guardar perfil:", err));
+            };
+
+            const onPhoto = (ev) => {
+                const f = ev.target.files && ev.target.files[0];
+                if (!f) return;
+                const url = URL.createObjectURL(f);
+                const img = new Image();
+                img.onload = () => {
+                    const S = 256;
+                    const cv = document.createElement('canvas');
+                    cv.width = S; cv.height = S;
+                    const m = Math.min(img.width, img.height);
+                    cv.getContext('2d').drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+                    const data = cv.toDataURL('image/jpeg', 0.8);
+                    URL.revokeObjectURL(url);
+                    fetch(`/api/usuario/${usuario.Id}/foto`, { method: 'PUT', headers, body: JSON.stringify({ foto: data }) })
+                        .then(r => r.json())
+                        .then(() => persistUser({ ...usuario, Foto: data, foto: data }))
+                        .catch(err => console.error("Error al subir foto:", err));
+                };
+                img.src = url;
+                ev.target.value = '';
+            };
+
+            const changePassword = () => {
+                if (pw.n.length < 6) return setPwMsg({ ok: false, text: t('pwShort') });
+                if (pw.n !== pw.r) return setPwMsg({ ok: false, text: t('pwMismatch') });
+                fetch(`/api/usuario/${usuario.Id}/password`, { method: 'PUT', headers, body: JSON.stringify({ actual: pw.a, nueva: pw.n }) })
+                    .then(async (r) => {
+                        if (r.ok) { setPwMsg({ ok: true, text: t('pwOk') }); setPw({ a: '', n: '', r: '' }); }
+                        else setPwMsg({ ok: false, text: r.status === 401 ? t('pwWrong') : t('pwErr') });
+                    })
+                    .catch(() => setPwMsg({ ok: false, text: t('pwErr') }));
+            };
+
+            const pwInput = (key, ph) => (
+                <input type="password" placeholder={ph} value={pw[key]} onChange={(e) => setPw({ ...pw, [key]: e.target.value })} className={`w-full ${INPUT} px-4 py-3 text-sm`} />
+            );
+
+            return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start pb-24 lg:pb-4">
+                    {/* Usuario */}
+                    <div className={`${CARD} p-5 space-y-4`}>
+                        <h2 className="text-lg font-bold text-white">{t('profile')}</h2>
+                        <div className="flex items-center gap-4">
+                            <Avatar usuario={usuario} size={72} />
+                            <div className="min-w-0">
+                                <p className="text-white font-bold truncate">{usuario.nombre || usuario.Nombre}</p>
+                                <button onClick={() => fileRef.current && fileRef.current.click()} className="text-xs text-neon-500 font-semibold mt-1 cursor-pointer">{t('changePhoto')}</button>
+                                <input ref={fileRef} type="file" accept="image/*" onChange={onPhoto} className="hidden" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {[[t('weight'), peso, setPeso], [t('height'), altura, setAltura], [t('age'), edad, setEdad]].map(([label, val, setter], i) => (
+                                <div key={i}>
+                                    <label className="text-xs text-graphite-400 block mb-1">{label}</label>
+                                    <input type="number" inputMode="decimal" value={val} onChange={(e) => setter(e.target.value)} className={`w-full ${INPUT} p-2 font-bold text-center`} />
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={saveProfile} className={`w-full ${BTN_NEON} py-3 rounded-xl text-sm`}>{flash || t('save')}</button>
+                    </div>
+
+                    {/* Contraseña */}
+                    <div className={`${CARD} p-5 space-y-3`}>
+                        <h2 className="text-lg font-bold text-white">{t('pwTitle')}</h2>
+                        {pwInput('a', t('pwCurrent'))}
+                        {pwInput('n', t('pwNew'))}
+                        {pwInput('r', t('pwRepeat'))}
+                        {pwMsg && <p className={`text-xs font-semibold ${pwMsg.ok ? 'text-neon-500' : 'text-red-400'}`}>{pwMsg.text}</p>}
+                        <button onClick={changePassword} className={`w-full ${BTN_NEON} py-3 rounded-xl text-sm`}>{t('pwUpdate')}</button>
+                    </div>
+
+                    {/* Preferencias */}
+                    <div className={`${CARD} p-5 space-y-5`}>
+                        <div>
+                            <label className="text-xs text-graphite-400 block mb-2 uppercase tracking-wider font-bold">{t('theme')}</label>
+                            <Seg value={theme} onChange={setTheme} options={[['dark', t('dark')], ['light', t('light')]]} />
+                        </div>
+                        <div>
+                            <label className="text-xs text-graphite-400 block mb-2 uppercase tracking-wider font-bold">{t('language')}</label>
+                            <Seg value={lang} onChange={setLang} options={[['es', 'Castellano'], ['pt', 'Português'], ['en', 'English']]} />
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <div>
+                                <p className="text-white font-bold text-sm">{t('notifications')}</p>
+                                <p className="text-xs text-graphite-400">{t('notifSub')}</p>
+                            </div>
+                            <Switch on={notif} onChange={toggleNotif} />
+                        </div>
+                    </div>
+
+                    {/* Cómo funciona + salir */}
+                    <div className={`${CARD} p-5 space-y-3`}>
+                        <button onClick={() => setHowOpen(true)} className="w-full flex items-center justify-between text-left cursor-pointer">
+                            <div>
+                                <p className="text-white font-bold">{t('how')}</p>
+                                <p className="text-xs text-graphite-400">{t('howSub')}</p>
+                            </div>
+                            <span className="text-neon-500 font-black text-xl">›</span>
+                        </button>
+                        <button onClick={onLogout} className={`w-full py-3 rounded-xl text-sm font-bold ${BTN_DANGER}`}>{t('logout')}</button>
+                    </div>
+
+                    {howOpen && <HowModal onClose={() => setHowOpen(false)} />}
                 </div>
             );
         };
@@ -997,6 +1446,31 @@
             const [nombreInput, setNombreInput] = useState('');
             const [passwordInput, setPasswordInput] = useState('');
             const [activeTab, setActiveTab] = useState('training');
+            const [lang, setLangState] = useState(() => localStorage.getItem('ruko_lang') || detectLang());
+            const [theme, setThemeState] = useState(() => localStorage.getItem('ruko_theme') || 'dark');
+            const [notif, setNotif] = useState(() => localStorage.getItem('ruko_notif') === 'on');
+            const crono = useCrono();
+            const t = makeT(lang);
+
+            useEffect(() => {
+                document.documentElement.classList.toggle('light', theme === 'light');
+                const meta = document.querySelector('meta[name=theme-color]');
+                if (meta) meta.setAttribute('content', theme === 'light' ? '#e9ecef' : '#0e0f11');
+            }, [theme]);
+            useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+
+            const setLang = (l) => { setLangState(l); localStorage.setItem('ruko_lang', l); };
+            const setTheme = (th) => { setThemeState(th); localStorage.setItem('ruko_theme', th); };
+
+            const toggleNotif = async () => {
+                if (notif) { setNotif(false); localStorage.setItem('ruko_notif', 'off'); return; }
+                if (!('Notification' in window)) { alert(t('notifUnsupported')); return; }
+                let perm = Notification.permission;
+                if (perm !== 'granted') perm = await Notification.requestPermission();
+                if (perm !== 'granted') { alert(t('notifDenied')); return; }
+                setNotif(true);
+                localStorage.setItem('ruko_notif', 'on');
+            };
 
             const handleLogin = async (e) => {
                 e.preventDefault();
@@ -1011,11 +1485,11 @@
                         setUsuario(data.usuario);
                         localStorage.setItem('fitpro_usuario', JSON.stringify(data.usuario));
                     } else {
-                        alert(data.error || 'Credenciales inválidas.');
+                        alert(res.status === 401 ? t('errCreds') : (data.error || t('errCreds')));
                     }
                 } catch (err) {
                     console.error("Error en login:", err);
-                    alert("No se pudo conectar con el servidor.");
+                    alert(t('errConn'));
                 }
             };
 
@@ -1029,99 +1503,125 @@
                     });
                     const data = await res.json();
                     if (data.success) {
-                        alert('¡Registrado con éxito! Ahora inicia sesión.');
+                        alert(t('regOk'));
                         setPantallaAuth('login');
                         setNombreInput(''); setPasswordInput('');
                     } else {
-                        alert(data.error || 'Error al registrarse.');
+                        alert(data.error || t('regErr'));
                     }
                 } catch (err) {
                     console.error("Error en registro:", err);
-                    alert("No se pudo conectar con el servidor.");
+                    alert(t('errConn'));
                 }
             };
 
             const handleLogout = () => {
                 setUsuario(null);
+                setActiveTab('training');
                 localStorage.removeItem('fitpro_usuario');
             };
+
+            const ctx = { t, lang };
 
             if (!usuario) {
                 const esLogin = pantallaAuth === 'login';
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-graphite-950 text-white p-4">
-                        <div className="w-full max-w-sm bg-graphite-900 p-6 rounded-2xl border border-graphite-800 shadow-xl space-y-4">
-                            <h1 className="text-3xl font-black text-neon-500 text-center tracking-tight">RUKO</h1>
-                            <form onSubmit={esLogin ? handleLogin : handleRegister} className="space-y-3">
-                                <input type="text" placeholder="Tu Nombre" value={nombreInput} onChange={e => setNombreInput(e.target.value)}
-                                    className="w-full bg-graphite-800 p-3 rounded-lg border border-graphite-700 text-sm outline-none focus:border-neon-500" required />
-                                <input type="password" placeholder="Contraseña" value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
-                                    className="w-full bg-graphite-800 p-3 rounded-lg border border-graphite-700 text-sm outline-none focus:border-neon-500" required />
-                                <button type="submit" className={`w-full ${BTN_NEON} p-3 rounded-lg text-sm`}>{esLogin ? 'Iniciar Sesión' : 'Registrarse'}</button>
-                                <p className="text-xs text-center text-graphite-400 cursor-pointer pt-2 hover:text-neon-500"
-                                    onClick={() => { setPantallaAuth(esLogin ? 'registro' : 'login'); setNombreInput(''); setPasswordInput(''); }}>
-                                    {esLogin ? '¿No tenés cuenta? Registrate acá' : '¿Ya tenés cuenta? Iniciá sesión'}
-                                </p>
-                            </form>
+                    <LangCtx.Provider value={ctx}>
+                        <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-graphite-950 text-white p-4">
+                            <div className="w-full max-w-sm bg-graphite-900 p-6 rounded-2xl border border-graphite-800 shadow-xl space-y-4">
+                                <h1 className="text-3xl font-black text-neon-500 text-center tracking-tight">RUKO</h1>
+                                <form onSubmit={esLogin ? handleLogin : handleRegister} className="space-y-3">
+                                    <input type="text" placeholder={t('yourName')} value={nombreInput} onChange={e => setNombreInput(e.target.value)}
+                                        className="w-full bg-graphite-800 p-3 rounded-lg border border-graphite-700 text-sm outline-none focus:border-neon-500" required />
+                                    <input type="password" placeholder={t('password')} value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
+                                        className="w-full bg-graphite-800 p-3 rounded-lg border border-graphite-700 text-sm outline-none focus:border-neon-500" required />
+                                    <button type="submit" className={`w-full ${BTN_NEON} p-3 rounded-lg text-sm`}>{esLogin ? t('login') : t('register')}</button>
+                                    <p className="text-xs text-center text-graphite-400 cursor-pointer pt-2 hover:text-neon-500"
+                                        onClick={() => { setPantallaAuth(esLogin ? 'registro' : 'login'); setNombreInput(''); setPasswordInput(''); }}>
+                                        {esLogin ? t('noAcc') : t('haveAcc')}
+                                    </p>
+                                </form>
+                                <div className="pt-2"><Seg value={lang} onChange={setLang} options={[['es', 'ES'], ['pt', 'PT'], ['en', 'EN']]} /></div>
+                            </div>
                         </div>
-                    </div>
+                    </LangCtx.Provider>
                 );
             }
 
             const nombreUsuario = usuario.nombre || usuario.Nombre;
             const navItems = [
-                { id: 'training', label: 'Rutina', Icon: Icons.Dumbbell },
-                { id: 'nutrition', label: 'Nutrición', Icon: Icons.Apple },
-                { id: 'progress', label: 'Progreso', Icon: Icons.TrendingUp },
+                { id: 'training', label: t('navTraining'), Icon: Icons.Dumbbell },
+                { id: 'nutrition', label: t('navNutrition'), Icon: Icons.Apple },
+                { id: 'progress', label: t('navProgress'), Icon: Icons.TrendingUp },
+                { id: 'timer', label: t('navTimer'), Icon: Icons.Timer },
             ];
+            const bannerLabel = crono.running ? t('running') : t('paused');
 
             return (
-                <div className="min-h-[100dvh] bg-graphite-950 font-sans">
-                    {/* Sidebar (desktop) */}
-                    <aside className="hidden lg:flex fixed inset-y-0 left-0 w-60 flex-col bg-graphite-900 border-r border-graphite-800 p-5 z-20">
-                        <h1 className="text-2xl font-black text-neon-500 tracking-tight">RUKO</h1>
-                        <nav className="mt-8 space-y-1">
-                            {navItems.map(({ id, label, Icon }) => (
-                                <button key={id} onClick={() => setActiveTab(id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
-                                        activeTab === id ? 'bg-neon-500/10 text-neon-500' : 'text-graphite-400 hover:bg-graphite-800 hover:text-white'
-                                    }`}>
-                                    <Icon /><span>{label}</span>
-                                </button>
-                            ))}
-                        </nav>
-                    </aside>
+                <LangCtx.Provider value={ctx}>
+                    <div className="min-h-[100dvh] bg-graphite-950 font-sans">
+                        <CronoEffects c={crono.c} notifEnabled={notif} label={t('running')} />
 
-                    <div className="lg:pl-60">
-                        <header className="bg-graphite-900 safe-top pb-4 px-4 sm:px-6 shadow-md border-b border-graphite-800 sticky top-0 z-10">
-                            <div className="max-w-5xl mx-auto flex justify-between items-center">
-                                <h1 className="lg:invisible text-2xl font-black text-neon-500 tracking-tight">RUKO</h1>
-                                <div className="flex items-center space-x-3">
-                                    <span className="text-xs font-bold text-neon-500 truncate max-w-[40vw]">Hola, {nombreUsuario}</span>
-                                    <button onClick={handleLogout} className={`text-[10px] px-2.5 py-1 rounded-lg ${BTN_DANGER}`}>Salir</button>
+                        {/* Sidebar (desktop) */}
+                        <aside className="hidden lg:flex fixed inset-y-0 left-0 w-60 flex-col bg-graphite-900 border-r border-graphite-800 p-5 z-20">
+                            <h1 className="text-2xl font-black text-neon-500 tracking-tight">RUKO</h1>
+                            <nav className="mt-8 space-y-1">
+                                {navItems.map(({ id, label, Icon }) => (
+                                    <button key={id} onClick={() => setActiveTab(id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
+                                            activeTab === id ? 'bg-neon-500/10 text-neon-500' : 'text-graphite-400 hover:bg-graphite-800 hover:text-white'
+                                        }`}>
+                                        <Icon /><span>{label}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                            <button onClick={() => setActiveTab('settings')}
+                                className={`mt-auto w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer ${
+                                    activeTab === 'settings' ? 'bg-neon-500/10 text-neon-500' : 'text-graphite-400 hover:bg-graphite-800 hover:text-white'
+                                }`}>
+                                <Icons.Settings /><span>{t('settings')}</span>
+                            </button>
+                        </aside>
+
+                        <div className="lg:pl-60">
+                            <header className="bg-graphite-900 safe-top pb-4 px-4 sm:px-6 shadow-md border-b border-graphite-800 sticky top-0 z-10">
+                                <div className="max-w-5xl mx-auto flex justify-between items-center">
+                                    <h1 className="lg:invisible text-2xl font-black text-neon-500 tracking-tight">RUKO</h1>
+                                    <button onClick={() => setActiveTab('settings')} className="flex items-center gap-2 cursor-pointer">
+                                        <span className="text-xs font-bold text-neon-500 truncate max-w-[40vw]">{t('hello')}, {nombreUsuario}</span>
+                                        <Avatar usuario={usuario} size={36} />
+                                    </button>
                                 </div>
-                            </div>
-                        </header>
+                                {crono.active && activeTab !== 'timer' && (
+                                    <CronoBanner c={crono.c} label={bannerLabel} onClick={() => setActiveTab('timer')} />
+                                )}
+                            </header>
 
-                        <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-                            {activeTab === 'training' && <TrainingTab usuario={usuario} />}
-                            {activeTab === 'nutrition' && <NutritionTab usuario={usuario} setUsuario={setUsuario} />}
-                            {activeTab === 'progress' && <ProgressTab usuario={usuario} />}
-                        </main>
-                    </div>
-
-                    {/* Barra inferior (móvil y tablet) */}
-                    <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-graphite-900/95 backdrop-blur-md border-t border-graphite-800 rounded-t-3xl z-20 safe-bottom">
-                        <div className="flex justify-around items-center p-2 max-w-md mx-auto">
-                            {navItems.map(({ id, label, Icon }) => (
-                                <button key={id} onClick={() => setActiveTab(id)}
-                                    className={`flex-1 flex flex-col items-center space-y-1 p-2 transition-colors cursor-pointer ${activeTab === id ? 'text-neon-500' : 'text-graphite-400'}`}>
-                                    <Icon /><span className="text-[10px] font-medium">{label}</span>
-                                </button>
-                            ))}
+                            <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+                                {activeTab === 'training' && <TrainingTab usuario={usuario} />}
+                                {activeTab === 'nutrition' && <NutritionTab usuario={usuario} setUsuario={setUsuario} />}
+                                {activeTab === 'progress' && <ProgressTab usuario={usuario} />}
+                                {activeTab === 'timer' && <TimerTab crono={crono} />}
+                                {activeTab === 'settings' && (
+                                    <SettingsTab usuario={usuario} setUsuario={setUsuario} theme={theme} setTheme={setTheme}
+                                        lang={lang} setLang={setLang} notif={notif} toggleNotif={toggleNotif} onLogout={handleLogout} />
+                                )}
+                            </main>
                         </div>
-                    </nav>
-                </div>
+
+                        {/* Barra inferior (móvil y tablet) */}
+                        <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-graphite-900/95 backdrop-blur-md border-t border-graphite-800 rounded-t-3xl z-20 safe-bottom">
+                            <div className="flex justify-around items-center p-2 max-w-md mx-auto">
+                                {navItems.map(({ id, label, Icon }) => (
+                                    <button key={id} onClick={() => setActiveTab(id)}
+                                        className={`flex-1 flex flex-col items-center space-y-1 p-2 transition-colors cursor-pointer ${activeTab === id ? 'text-neon-500' : 'text-graphite-400'}`}>
+                                        <Icon /><span className="text-[10px] font-medium">{label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </nav>
+                    </div>
+                </LangCtx.Provider>
             );
         };
 

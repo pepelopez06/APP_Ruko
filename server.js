@@ -1,20 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 app.use(express.static(__dirname));
 
-// Configuración de conexión a Supabase (Pooler)
+// Conexión a Supabase (Pooler). La cadena va en la variable de entorno DATABASE_URL.
+if (!process.env.DATABASE_URL) {
+    console.error("Falta la variable de entorno DATABASE_URL");
+}
 const pool = new Pool({
-    connectionString: "postgresql://postgres.cvaijwcgznsciwhczlmx:Adminpepe90__@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
+    connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// Verificar conexión al iniciar
 pool.connect((err, client, release) => {
     if (err) {
         return console.error("Error al conectar a Supabase:", err.stack);
@@ -22,6 +25,30 @@ pool.connect((err, client, release) => {
     console.log("¡Conexión exitosa a la base de datos de Supabase en la nube! 🟢");
     release();
 });
+
+// Un hash de bcrypt siempre empieza con $2a$, $2b$ o $2y$
+const isHash = (v) => typeof v === 'string' && /^\$2[aby]\$/.test(v);
+
+const normalizarUsuario = (u) => {
+    const id = u.id || u.Id;
+    const nombre = u.nombre || u.Nombre;
+    const peso = u.peso || u.Peso;
+    const altura = u.altura || u.Altura;
+    const edad = u.edad || u.Edad;
+    const actividad = u.actividad || u.Actividad;
+    const objetivo = u.objetivo || u.Objetivo;
+    const foto = u.foto || u.Foto || null;
+    return {
+        id, Id: id,
+        nombre, Nombre: nombre,
+        peso, Peso: peso,
+        altura, Altura: altura,
+        edad, Edad: edad,
+        actividad, Actividad: actividad,
+        objetivo, Objetivo: objetivo,
+        foto, Foto: foto
+    };
+};
 
 // Ruta para buscar alimentos
 app.get('/api/alimentos', async (req, res) => {
@@ -131,15 +158,19 @@ app.post('/api/asistencia', async (req, res) => {
 app.post('/api/register', async (req, res) => {
     try {
         const { nombre, password } = req.body;
-        const existe = await pool.query('SELECT * FROM Usuarios WHERE Nombre = $1', [nombre]);
+        if (!nombre || !password) {
+            return res.status(400).json({ error: 'Completá nombre y contraseña.' });
+        }
+        const existe = await pool.query('SELECT Id FROM Usuarios WHERE Nombre = $1', [nombre]);
 
         if (existe.rows.length > 0) {
             return res.status(400).json({ error: 'Ese nombre ya está en uso.' });
         }
 
+        const hash = await bcrypt.hash(password, 10);
         await pool.query(
             'INSERT INTO Usuarios (Nombre, Password, Peso, Altura, Edad, Actividad, Objetivo) VALUES ($1, $2, 75, 175, 20, 1.55, $3)',
-            [nombre, password, 'mantenimiento']
+            [nombre, hash, 'mantenimiento']
         );
 
         res.json({ success: true, message: 'Usuario registrado correctamente' });
@@ -153,8 +184,8 @@ app.post('/api/login', async (req, res) => {
     try {
         const { nombre, password } = req.body;
         const resultado = await pool.query(
-            'SELECT Id, Nombre, Peso, Altura, Edad, Actividad, Objetivo FROM Usuarios WHERE Nombre = $1 AND Password = $2',
-            [nombre, password]
+            'SELECT Id, Nombre, Password, Peso, Altura, Edad, Actividad, Objetivo, Foto FROM Usuarios WHERE Nombre = $1',
+            [nombre]
         );
 
         if (resultado.rows.length === 0) {
@@ -162,24 +193,24 @@ app.post('/api/login', async (req, res) => {
         }
 
         const u = resultado.rows[0];
-        const usuarioNormalizado = {
-            id: u.id || u.Id,
-            Id: u.id || u.Id,
-            nombre: u.nombre || u.Nombre,
-            Nombre: u.nombre || u.Nombre,
-            peso: u.peso || u.Peso,
-            Peso: u.peso || u.Peso,
-            altura: u.altura || u.Altura,
-            Altura: u.altura || u.Altura,
-            edad: u.edad || u.Edad,
-            Edad: u.edad || u.Edad,
-            actividad: u.actividad || u.Actividad,
-            Actividad: u.actividad || u.Actividad,
-            objetivo: u.objetivo || u.Objetivo,
-            Objetivo: u.objetivo || u.Objetivo
-        };
+        const stored = u.password || u.Password;
+        const userId = u.id || u.Id;
+        let ok = false;
 
-        res.json({ success: true, usuario: usuarioNormalizado });
+        if (isHash(stored)) {
+            ok = await bcrypt.compare(password || '', stored);
+        } else if (stored === password) {
+            // Cuenta antigua con contraseña en texto plano: se migra a hash al iniciar sesión
+            ok = true;
+            const hash = await bcrypt.hash(password, 10);
+            await pool.query('UPDATE Usuarios SET Password = $1 WHERE Id = $2', [hash, userId]);
+        }
+
+        if (!ok) {
+            return res.status(401).json({ error: 'Nombre o contraseña incorrectos.' });
+        }
+
+        res.json({ success: true, usuario: normalizarUsuario(u) });
     } catch (err) {
         console.error("Error en login:", err);
         res.status(500).json({ error: err.message });
@@ -198,6 +229,50 @@ app.put('/api/usuario/:id', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al actualizar el perfil del usuario" });
+    }
+});
+
+app.put('/api/usuario/:id/password', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { actual, nueva } = req.body;
+
+        if (!nueva || String(nueva).length < 6) {
+            return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+        }
+
+        const r = await pool.query('SELECT Password FROM Usuarios WHERE Id = $1', [id]);
+        if (r.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        const stored = r.rows[0].password || r.rows[0].Password;
+        const ok = isHash(stored) ? await bcrypt.compare(actual || '', stored) : stored === actual;
+        if (!ok) {
+            return res.status(401).json({ error: 'La contraseña actual es incorrecta.' });
+        }
+
+        const hash = await bcrypt.hash(nueva, 10);
+        await pool.query('UPDATE Usuarios SET Password = $1 WHERE Id = $2', [hash, id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error al cambiar contraseña:", error);
+        res.status(500).json({ error: "Error al cambiar la contraseña" });
+    }
+});
+
+app.put('/api/usuario/:id/foto', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { foto } = req.body;
+        if (typeof foto !== 'string' || !foto.startsWith('data:image/') || foto.length > 500000) {
+            return res.status(400).json({ error: 'Imagen inválida o demasiado grande.' });
+        }
+        await pool.query('UPDATE Usuarios SET Foto = $1 WHERE Id = $2', [foto, id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error al guardar foto:", error);
+        res.status(500).json({ error: "Error al guardar la foto" });
     }
 });
 
