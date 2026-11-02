@@ -6,11 +6,14 @@
     <meta name="theme-color" content="#0e0f11">
     <title>RUKO</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Outfit', 'system-ui', 'sans-serif'] },
                     colors: {
                         graphite: Object.fromEntries([300,400,500,600,700,800,900,950].map(n => [n, `rgb(var(--g${n}) / <alpha-value>)`])),
                         ink: '#0e0f11',
@@ -44,6 +47,25 @@
         html.light .text-neon-500 { color: #3f7d0a; }
         html.light .shadow-lg { box-shadow: 0 1px 3px rgba(30, 40, 15, 0.08), 0 6px 16px rgba(30, 40, 15, 0.06); }
         html.light .neon-glow { box-shadow: 0 4px 14px rgba(132, 204, 22, 0.35); }
+        body { font-family: 'Outfit', system-ui, sans-serif; background-image: radial-gradient(700px 320px at 85% -6%, rgba(163, 255, 18, 0.10), transparent 70%); background-repeat: no-repeat; background-attachment: fixed; }
+        html.light body { background-image: radial-gradient(700px 320px at 85% -6%, rgba(132, 204, 22, 0.18), transparent 70%); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @keyframes barUp { from { transform: scaleY(0.15); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+        @keyframes drift { to { transform: translate(18%, 14%); } }
+        .fade-up { animation: fadeUp 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+        .stagger > * { animation: fadeUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+        .stagger > *:nth-child(2) { animation-delay: 0.05s; } .stagger > *:nth-child(3) { animation-delay: 0.1s; } .stagger > *:nth-child(4) { animation-delay: 0.15s; }
+        .stagger > *:nth-child(5) { animation-delay: 0.2s; } .stagger > *:nth-child(6) { animation-delay: 0.25s; } .stagger > *:nth-child(7) { animation-delay: 0.3s; }
+        .press { transition: transform 0.15s ease; } .press:active { transform: scale(0.97); }
+        button:not(:disabled):active { transform: scale(0.97); }
+        .glass-btn { width: 2.75rem; height: 2.75rem; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #fff; backdrop-filter: blur(10px); cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; }
+        .glass-btn:hover { border-color: rgba(163,255,18,0.6); color: #a3ff12; }
+        html.light .glass-btn { background: rgba(255,255,255,0.8); border-color: rgba(30,40,15,0.12); color: #14161a; }
+        html.light .glass-btn:hover { color: #3f7d0a; border-color: #84cc16; }
+        .hero { position: relative; background: linear-gradient(135deg, #d4ff4d 0%, #a3ff12 48%, #6fd400 100%); }
+        .hero::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), transparent 40%); animation: drift 8s ease-in-out infinite alternate; pointer-events: none; }
+        .hero > * { position: relative; }
+        @media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
     </style>
 </head>
 <body class="bg-graphite-950 text-white">
@@ -71,7 +93,11 @@
             Play: () => <Svg size={18}><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></Svg>,
             Pause: () => <Svg size={18}><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></Svg>,
             Reset: () => <Svg size={18}><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></Svg>,
-            Flag: () => <Svg size={18}><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></Svg>
+            Flag: () => <Svg size={18}><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></Svg>,
+            ArrowUpRight: () => <Svg size={18}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></Svg>,
+            Sliders: () => <Svg size={20}><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.2" fill="currentColor"/><circle cx="15" cy="16" r="2.2" fill="currentColor"/></Svg>,
+            Flame: () => <Svg><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></Svg>,
+            BarChart: () => <Svg><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></Svg>
         };
 
         // ---------- Estilos reutilizables ----------
@@ -178,6 +204,28 @@
                 "Plancha con toque de hombros", "Elevación de talones sentado en máquina con mancuerna sobre rodillas", "Encogimientos abdominales en máquina",
                 "Elevación de pelvis isométrica", "Paseo del granjero con mancuernas (Core y agarre)", "Vacuum abdominal"
             ]
+        };
+
+        // ====================================================
+        // ANILLO DE PROGRESO
+        // ====================================================
+        const Ring = ({ value, max, label, sub }) => {
+            const R = 54, C = 2 * Math.PI * R;
+            const pct = Math.min(1, max > 0 ? value / max : 0);
+            return (
+                <div className="relative w-44 h-44 mx-auto">
+                    <svg viewBox="0 0 128 128" className="w-full h-full -rotate-90">
+                        <circle cx="64" cy="64" r={R} fill="none" strokeWidth="10" className="stroke-graphite-700" />
+                        <circle cx="64" cy="64" r={R} fill="none" strokeWidth="10" strokeLinecap="round" stroke="currentColor" className="text-neon-500"
+                            strokeDasharray={C} strokeDashoffset={C * (1 - pct)}
+                            style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.2, 0.8, 0.2, 1)', filter: 'drop-shadow(0 0 6px rgba(163,255,18,0.55))' }} />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-4xl font-black text-white tabular-nums">{label}</span>
+                        <span className="text-[11px] text-graphite-400">{sub}</span>
+                    </div>
+                </div>
+            );
         };
 
         // ====================================================
@@ -364,37 +412,77 @@
                 exerciseDatabase[selectedMuscleGroup].forEach(ex => listaFiltrada.push({ muscle: selectedMuscleGroup, ex }));
             }
 
+            const dbRef = useRef(null);
+            const openDB = () => {
+                setIsAddingDB(true);
+                setTimeout(() => { if (dbRef.current) dbRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+            };
+            // Progreso semanal: días asistidos esta semana (lun-dom) vs. días configurados
+            const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+            let weekDone = 0;
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+                const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                if (attendance[k]) weekDone++;
+            }
+            const weekPct = Math.min(100, Math.round((weekDone / Math.max(1, trainingDays)) * 100));
+            const BARS = 20;
+            const filledBars = Math.round((weekPct / 100) * BARS);
+
             return (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start pb-24 lg:pb-4">
-                    {/* Configuración semanal */}
-                    <div className={`${CARD} overflow-hidden`}>
-                        <div onClick={() => setIsConfigOpen(!isConfigOpen)} className="p-4 flex justify-between items-center cursor-pointer hover:bg-graphite-700/30 transition-colors">
-                            <div className="flex items-center space-x-3">
-                                <div className="bg-neon-500/10 text-neon-500 p-2 rounded-lg"><Icons.Settings /></div>
-                                <div>
-                                    <h2 className="text-base font-bold text-white">{t('weekCfg')}</h2>
-                                    <p className="text-xs text-graphite-400">{trainingDays} {t('daysConfigured')}</p>
-                                </div>
-                            </div>
-                            <div className={`transform transition-transform ${isConfigOpen ? 'rotate-180' : ''} text-graphite-400`}><Icons.ChevronDown /></div>
+                    {/* Título + botones de vidrio */}
+                    <div className="lg:col-span-2 flex items-center justify-between fade-up">
+                        <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">{t('navTraining')}</h2>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setIsConfigOpen(!isConfigOpen)} className={`glass-btn ${isConfigOpen ? '!border-neon-500 !text-neon-500' : ''}`}><Icons.Sliders /></button>
+                            <button onClick={openDB} className="glass-btn"><Icons.Plus /></button>
                         </div>
-                        {isConfigOpen && (
-                            <div className="p-4 bg-graphite-900/60 border-t border-graphite-700">
-                                <div className="flex items-center space-x-3 bg-graphite-900 p-3 rounded-xl border border-graphite-700">
-                                    <label className="text-sm font-medium text-graphite-300 w-full">{t('askDays')}</label>
-                                    <select
-                                        value={trainingDays}
-                                        onChange={(e) => {
-                                            setTrainingDays(Number(e.target.value));
-                                            if (currentDay > Number(e.target.value)) setCurrentDay(1);
-                                        }}
-                                        className="bg-graphite-800 text-white p-2 rounded outline-none border border-graphite-600 focus:border-neon-500 font-bold"
-                                    >
-                                        {[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} {t('days')}</option>)}
-                                    </select>
+                    </div>
+
+                    {isConfigOpen && (
+                        <div className={`lg:col-span-2 ${CARD} p-4 fade-up`}>
+                            <div className="flex items-center space-x-3">
+                                <label className="text-sm font-medium text-graphite-300 w-full">{t('askDays')}</label>
+                                <select
+                                    value={trainingDays}
+                                    onChange={(e) => {
+                                        setTrainingDays(Number(e.target.value));
+                                        if (currentDay > Number(e.target.value)) setCurrentDay(1);
+                                    }}
+                                    className="bg-graphite-900 text-white p-2 rounded-lg outline-none border border-graphite-600 focus:border-neon-500 font-bold"
+                                >
+                                    {[1, 2, 3, 4, 5, 6, 7].map(n => <option key={n} value={n}>{n} {t('days')}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Tarjeta destacada: HOY */}
+                    <div className="hero rounded-3xl p-5 text-ink neon-glow min-h-[200px] flex flex-col justify-between overflow-hidden fade-up">
+                        <div className="flex justify-between items-start">
+                            <span className="text-sm font-bold flex items-center gap-1.5">{t('today')} <span>✦</span></span>
+                            <button onClick={openDB} className="w-10 h-10 rounded-full bg-ink/15 hover:bg-ink/25 flex items-center justify-center cursor-pointer transition-colors"><Icons.ArrowUpRight /></button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 items-end mt-6">
+                            <div className="min-w-0">
+                                <p className="text-3xl font-black leading-[1.05] break-words">{nombresDias[currentDay] || t('noName')}</p>
+                                <p className="text-xs font-semibold opacity-70 mt-2">{t('day')} {currentDay} · {activeRoutine.length} {t('exercises')}</p>
+                            </div>
+                            <div>
+                                <div className="flex items-end gap-[3px] h-14">
+                                    {Array.from({ length: BARS }, (_, i) => (
+                                        <span key={i} className="flex-1 rounded-full origin-bottom"
+                                            style={{ height: i < filledBars ? '100%' : '42%', background: i < filledBars ? '#0e0f11' : 'rgba(14,15,17,0.25)', animation: 'barUp 0.6s cubic-bezier(0.2,0.8,0.2,1) backwards', animationDelay: `${i * 30}ms` }}></span>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between text-[11px] font-bold mt-2">
+                                    <span>{weekPct}%</span>
+                                    <span>{weekDone}/{trainingDays} · {t('thisWeek')}</span>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* Calendario de asistencia */}
@@ -417,7 +505,7 @@
                                         key={dayNum}
                                         type="button"
                                         onClick={() => toggleAttendanceDay(dayNum)}
-                                        className={`h-9 sm:h-10 rounded-xl flex flex-col items-center justify-center text-xs font-bold transition-all border cursor-pointer ${
+                                        className={`${dayNum === now.getDate() ? 'ring-2 ring-neon-500/60' : ''} press h-9 sm:h-10 rounded-xl flex flex-col items-center justify-center text-xs font-bold transition-all border cursor-pointer ${
                                             isChecked
                                                 ? 'bg-neon-500 text-ink border-neon-400 neon-glow'
                                                 : 'bg-graphite-900 text-graphite-400 border-graphite-700 hover:border-graphite-500'
@@ -434,39 +522,36 @@
                     {/* Días de rutina */}
                     <div className="lg:col-span-2">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-graphite-400 mb-3">{t('yourDays')}</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {Array.from({ length: trainingDays }, (_, i) => i + 1).map(day => (
-                                <div
-                                    key={day}
-                                    onClick={() => setCurrentDay(day)}
-                                    className={`p-4 rounded-2xl flex flex-col justify-between transition-all duration-300 shadow-lg border cursor-pointer ${
-                                        currentDay === day
-                                            ? 'bg-neon-500 text-ink border-neon-400 scale-[1.02] neon-glow'
-                                            : 'bg-graphite-800 text-graphite-300 border-graphite-700 hover:bg-graphite-700/60'
-                                    }`}
-                                >
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-xs uppercase font-bold tracking-wider opacity-90">{t('day')} {day}</span>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${currentDay === day ? 'bg-ink/20' : 'bg-black/30'}`}>{(routines[day] || []).length} {t('exShort')}</span>
+                        <div className="stagger grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {Array.from({ length: trainingDays }, (_, i) => i + 1).map(day => {
+                                const sel = currentDay === day;
+                                return (
+                                    <div key={day} onClick={() => setCurrentDay(day)}
+                                        className={`press relative p-4 rounded-3xl cursor-pointer border transition-all duration-300 min-h-[128px] flex flex-col justify-between ${
+                                            sel ? 'border-neon-500 bg-neon-500/10 neon-glow' : 'bg-graphite-800 border-graphite-700 hover:border-graphite-500'
+                                        }`}>
+                                        <div className="flex justify-between items-start">
+                                            <span className="text-[11px] uppercase font-bold tracking-wider text-graphite-400">{t('day')} {day}</span>
+                                            <span className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${sel ? 'bg-neon-500 text-ink' : 'bg-graphite-700 text-graphite-300'}`}><Icons.ArrowUpRight /></span>
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="text"
+                                                value={nombresDias[day] || ''}
+                                                onChange={(e) => {
+                                                    const nuevos = { ...nombresDias, [day]: e.target.value };
+                                                    setNombresDias(nuevos);
+                                                    localStorage.setItem('ruko_nombres_dias', JSON.stringify(nuevos));
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                                placeholder={t('namePh')}
+                                                className="w-full bg-transparent text-white font-black text-xl outline-none placeholder-graphite-500 border-b border-transparent focus:border-neon-500"
+                                            />
+                                            <p className="text-xs text-graphite-400 mt-1">{(routines[day] || []).length} {t('exercises')}</p>
+                                        </div>
                                     </div>
-                                    <input
-                                        type="text"
-                                        value={nombresDias[day] || ''}
-                                        onChange={(e) => {
-                                            const nuevos = { ...nombresDias, [day]: e.target.value };
-                                            setNombresDias(nuevos);
-                                            localStorage.setItem('ruko_nombres_dias', JSON.stringify(nuevos));
-                                        }}
-                                        onClick={(e) => e.stopPropagation()}
-                                        placeholder={t('namePh')}
-                                        className={`w-full font-bold text-sm px-2 py-1 rounded outline-none text-center border ${
-                                            currentDay === day
-                                                ? 'bg-ink/15 text-ink placeholder-ink/60 border-ink/30 focus:border-ink'
-                                                : 'bg-black/20 text-white border-white/20 focus:border-neon-500'
-                                        }`}
-                                    />
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -528,7 +613,7 @@
                     </div>
 
                     <button
-                        onClick={() => setIsAddingDB(true)}
+                        onClick={openDB}
                         className={`lg:col-span-2 w-full ${BTN_NEON} py-4 rounded-2xl neon-glow flex justify-center items-center space-x-2 mt-2`}
                     >
                         <Icons.Plus />
@@ -536,7 +621,7 @@
                     </button>
 
                     {isAddingDB && (
-                        <div className={`lg:col-span-2 ${CARD} p-5 space-y-4`}>
+                        <div ref={dbRef} className={`lg:col-span-2 ${CARD} p-5 space-y-4`}>
                             <h3 className="text-white font-bold flex items-center justify-between">
                                 <span className="flex items-center text-neon-500"><Icons.Dumbbell /> <span className="ml-2 text-white">{t('pickMuscle')}</span></span>
                                 <button onClick={() => setIsAddingDB(false)} className="text-xs text-graphite-400 hover:text-white cursor-pointer">{t('close')}</button>
@@ -825,20 +910,18 @@
                         <div className="mt-6 border-t border-graphite-700 pt-4">
                             <h3 className="text-white font-bold mb-3">{t('todayIntake')}</h3>
 
-                            <div className="mb-4">
-                                <div className="flex justify-between text-xs mb-1.5">
-                                    <span className="text-graphite-400">{t('calories')}</span>
-                                    <span className="font-bold text-neon-500">{Math.round(totalCalorias)} <span className="text-graphite-400 font-normal">/ {caloriasMeta} kcal</span></span>
-                                </div>
-                                <div className="h-2 bg-graphite-900 rounded-full overflow-hidden border border-graphite-700">
-                                    <div className="h-full bg-neon-500 transition-all duration-500" style={{ width: `${progresoCal}%` }}></div>
-                                </div>
-                            </div>
+                            <div className="mb-5"><Ring value={totalCalorias} max={caloriasMeta} label={Math.round(totalCalorias)} sub={`/ ${caloriasMeta} kcal`} /></div>
 
                             <div className="grid grid-cols-3 gap-2 mb-4">
-                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">{t('protein')}</span><p className="text-sm font-bold text-neon-500">{totalProteinas.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {proteinasMeta}g</span></p></div>
-                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">{t('carbsShort')}</span><p className="text-sm font-bold text-white">{totalCarbos.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {carbosMeta}g</span></p></div>
-                                <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700 text-center"><span className="text-[10px] text-graphite-400">{t('fats')}</span><p className="text-sm font-bold text-graphite-300">{totalGrasas.toFixed(1)}g <span className="text-[10px] text-graphite-500 font-normal">/ {grasasMeta}g</span></p></div>
+                                {[[t('protein'), totalProteinas, proteinasMeta, 'bg-neon-500'], [t('carbsShort'), totalCarbos, carbosMeta, 'bg-graphite-300'], [t('fats'), totalGrasas, grasasMeta, 'bg-graphite-500']].map(([l, v, m, bar], i) => (
+                                    <div key={i} className="bg-graphite-900 p-3 rounded-2xl border border-graphite-700">
+                                        <span className="text-[10px] text-graphite-400">{l}</span>
+                                        <p className="text-sm font-bold text-white mt-0.5 tabular-nums">{Math.round(v)}<span className="text-[10px] text-graphite-500 font-normal"> / {m}g</span></p>
+                                        <div className="h-1.5 bg-graphite-700 rounded-full mt-2 overflow-hidden">
+                                            <div className={`h-full rounded-full ${bar} transition-all duration-700`} style={{ width: `${Math.min(100, m > 0 ? (v / m) * 100 : 0)}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
                             <div className="space-y-2">
@@ -954,6 +1037,9 @@
                 return () => { if (chartInstance.current) { chartInstance.current.destroy(); chartInstance.current = null; } };
             }, [historialData]);
 
+            const pesosArr = historialData.map(i => Number(i.pesomaximo !== undefined ? i.pesomaximo : i.PesoMaximo) || 0);
+            const maxP = pesosArr.length ? Math.max(...pesosArr) : 0;
+            const gain = pesosArr.length > 1 ? pesosArr[pesosArr.length - 1] - pesosArr[0] : 0;
             const diasDisponibles = Object.keys(routines);
             const ejerciciosDelDia = routines[selectedDay] || [];
 
@@ -1000,6 +1086,17 @@
                             </select>
                         </div>
 
+                        {historialData.length > 0 && (
+                            <div className="stagger grid grid-cols-3 gap-2 mb-4">
+                                {[[t('statMax'), `${maxP} kg`], [t('statSessions'), pesosArr.length], [t('statGain'), `${gain > 0 ? '+' : ''}${gain} kg`]].map(([l, v], i) => (
+                                    <div key={i} className="bg-graphite-900 border border-graphite-700 rounded-2xl p-3 text-center">
+                                        <p className="text-[10px] text-graphite-400">{l}</p>
+                                        <p className={`text-lg font-black tabular-nums ${i === 2 && gain > 0 ? 'text-neon-500' : 'text-white'}`}>{v}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="bg-graphite-900 p-4 rounded-xl border border-graphite-700">
                             {!selectedExercise || historialData.length === 0 ? (
                                 <p className="text-center text-graphite-500 py-10 text-xs">{t('progEmpty')}</p>
@@ -1029,7 +1126,7 @@
                 base100: 'Base 100g/ml', grams: 'Gramos (g)', glasses: 'Vasos', spoons: 'Cucharadas', add: '+ Agregar', todayIntake: 'Consumo de Hoy', calories: 'Calorías', noFood: 'No has agregado alimentos hoy.',
                 evoTitle: 'Evolución de Cargas', evoSub: 'Polígono de frecuencias por sesión de entrenamiento', selDay: 'Seleccionar Día de Rutina', noRoutines: 'No hay rutinas creadas todavía.',
                 selEx: 'Seleccionar Ejercicio', noExDay: 'No hay ejercicios en este día', progEmpty: 'Entrená y anotá tus pesos en la rutina para ver tu polígono de frecuencias.', chartLabel: 'Peso Máximo del Día (kg)',
-                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
+                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', today: 'Hoy', completed: 'Completado', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sesiones', statGain: 'Mejora', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
                 yourName: 'Tu Nombre', password: 'Contraseña', login: 'Iniciar Sesión', register: 'Registrarse', noAcc: '¿No tenés cuenta? Registrate acá', haveAcc: '¿Ya tenés cuenta? Iniciá sesión',
                 errCreds: 'Credenciales inválidas.', errConn: 'No se pudo conectar con el servidor.', regOk: '¡Registrado con éxito! Ahora inicia sesión.', regErr: 'Error al registrarse.',
                 tmSub: 'Sigue corriendo aunque uses el resto de la app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', lap: 'Vuelta', laps: 'Vueltas',
@@ -1059,7 +1156,7 @@
                 base100: 'Base 100g/ml', grams: 'Gramas (g)', glasses: 'Copos', spoons: 'Colheres', add: '+ Adicionar', todayIntake: 'Consumo de Hoje', calories: 'Calorias', noFood: 'Você não adicionou alimentos hoje.',
                 evoTitle: 'Evolução das Cargas', evoSub: 'Polígono de frequências por sessão de treino', selDay: 'Selecionar Dia de Treino', noRoutines: 'Ainda não há treinos criados.',
                 selEx: 'Selecionar Exercício', noExDay: 'Não há exercícios neste dia', progEmpty: 'Treine e anote suas cargas para ver seu polígono de frequências.', chartLabel: 'Carga Máxima do Dia (kg)',
-                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
+                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', today: 'Hoje', completed: 'Concluído', thisWeek: 'esta semana', statMax: 'Máximo', statSessions: 'Sessões', statGain: 'Evolução', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
                 yourName: 'Seu Nome', password: 'Senha', login: 'Entrar', register: 'Cadastrar', noAcc: 'Não tem conta? Cadastre-se aqui', haveAcc: 'Já tem conta? Entre',
                 errCreds: 'Credenciais inválidas.', errConn: 'Não foi possível conectar ao servidor.', regOk: 'Cadastro concluído! Agora faça login.', regErr: 'Erro ao cadastrar.',
                 tmSub: 'Continua contando enquanto você usa o resto do app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Zerar', lap: 'Volta', laps: 'Voltas',
@@ -1089,7 +1186,7 @@
                 base100: 'Per 100g/ml', grams: 'Grams (g)', glasses: 'Glasses', spoons: 'Tablespoons', add: '+ Add', todayIntake: "Today's Intake", calories: 'Calories', noFood: "You haven't added any food today.",
                 evoTitle: 'Load Progress', evoSub: 'Frequency polygon per training session', selDay: 'Select Workout Day', noRoutines: 'No workouts created yet.',
                 selEx: 'Select Exercise', noExDay: 'No exercises on this day', progEmpty: 'Train and log your weights to see your frequency polygon.', chartLabel: 'Daily Max Weight (kg)',
-                saveErr: 'Could not save. Check the server connection.', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
+                saveErr: 'Could not save. Check the server connection.', today: 'Today', completed: 'Completed', thisWeek: 'this week', statMax: 'Max', statSessions: 'Sessions', statGain: 'Gain', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
                 yourName: 'Your Name', password: 'Password', login: 'Log In', register: 'Sign Up', noAcc: "Don't have an account? Sign up here", haveAcc: 'Already have an account? Log in',
                 errCreds: 'Invalid credentials.', errConn: 'Could not connect to the server.', regOk: 'Signed up successfully! Now log in.', regErr: 'Sign-up error.',
                 tmSub: 'Keeps running while you use the rest of the app', start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset', lap: 'Lap', laps: 'Laps',
@@ -1193,10 +1290,22 @@
         const BigTime = ({ c }) => {
             const el = useElapsed(c, 50);
             const cs = String(Math.floor((el % 1000) / 10)).padStart(2, '0');
+            const R = 108, C = 2 * Math.PI * R;
+            const sec = (el % 60000) / 60000;
             return (
-                <div className="text-center tabular-nums">
-                    <span className="text-6xl sm:text-7xl font-black text-neon-500">{fmtTime(el)}</span>
-                    <span className="text-2xl sm:text-3xl font-bold text-graphite-400">.{cs}</span>
+                <div className="relative w-64 h-64 sm:w-72 sm:h-72 mx-auto">
+                    <svg viewBox="0 0 240 240" className="w-full h-full -rotate-90">
+                        <circle cx="120" cy="120" r={R} fill="none" strokeWidth="8" className="stroke-graphite-700" />
+                        <circle cx="120" cy="120" r={R} fill="none" strokeWidth="8" strokeLinecap="round" stroke="currentColor" className="text-neon-500"
+                            strokeDasharray={C} strokeDashoffset={C * (1 - sec)}
+                            style={{ filter: c.startedAt ? 'drop-shadow(0 0 8px rgba(163,255,18,0.6))' : 'none' }} />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center tabular-nums">
+                        <div className="text-center">
+                            <span className="text-5xl sm:text-6xl font-black text-white">{fmtTime(el)}</span>
+                            <span className="text-xl font-bold text-neon-500">.{cs}</span>
+                        </div>
+                    </div>
                 </div>
             );
         };
@@ -1538,7 +1647,7 @@
                 return (
                     <LangCtx.Provider value={ctx}>
                         <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-graphite-950 text-white p-4">
-                            <div className="w-full max-w-sm bg-graphite-900 p-6 rounded-2xl border border-graphite-800 shadow-xl space-y-4">
+                            <div className="w-full max-w-sm bg-graphite-900 p-6 rounded-3xl border border-graphite-800 shadow-xl space-y-4 fade-up">
                                 <h1 className="text-3xl font-black text-neon-500 text-center tracking-tight">RUKO</h1>
                                 <form onSubmit={esLogin ? handleLogin : handleRegister} className="space-y-3">
                                     <input type="text" placeholder={t('yourName')} value={nombreInput} onChange={e => setNombreInput(e.target.value)}
@@ -1561,8 +1670,8 @@
             const nombreUsuario = usuario.nombre || usuario.Nombre;
             const navItems = [
                 { id: 'training', label: t('navTraining'), Icon: Icons.Dumbbell },
-                { id: 'nutrition', label: t('navNutrition'), Icon: Icons.Apple },
-                { id: 'progress', label: t('navProgress'), Icon: Icons.TrendingUp },
+                { id: 'nutrition', label: t('navNutrition'), Icon: Icons.Flame },
+                { id: 'progress', label: t('navProgress'), Icon: Icons.BarChart },
                 { id: 'timer', label: t('navTimer'), Icon: Icons.Timer },
             ];
             const bannerLabel = crono.running ? t('running') : t('paused');
@@ -1594,20 +1703,26 @@
                         </aside>
 
                         <div className="lg:pl-60">
-                            <header className="bg-graphite-900 safe-top pb-4 px-4 sm:px-6 shadow-md border-b border-graphite-800 sticky top-0 z-10">
+                            <header className="bg-graphite-950/75 backdrop-blur-xl safe-top pb-3 px-4 sm:px-6 border-b border-graphite-800/60 sticky top-0 z-10">
                                 <div className="max-w-5xl mx-auto flex justify-between items-center">
-                                    <h1 className="lg:invisible text-2xl font-black text-neon-500 tracking-tight">RUKO</h1>
-                                    <button onClick={() => setActiveTab('settings')} className="flex items-center gap-2 cursor-pointer">
-                                        <span className="text-xs font-bold text-neon-500 truncate max-w-[40vw]">{t('hello')}, {nombreUsuario}</span>
-                                        <Avatar usuario={usuario} size={36} />
+                                    <button onClick={() => setActiveTab('settings')} className="flex items-center gap-3 cursor-pointer">
+                                        <Avatar usuario={usuario} size={44} />
+                                        <div className="text-left">
+                                            <p className="text-[11px] text-graphite-400 leading-none">{t('hello')}</p>
+                                            <p className="text-sm font-bold text-white truncate max-w-[38vw] mt-1">{nombreUsuario}</p>
+                                        </div>
                                     </button>
+                                    <div className="flex items-center gap-3">
+                                        <span className="lg:hidden text-xl font-black tracking-tight text-neon-500">RUKO</span>
+                                        <button onClick={() => setActiveTab('settings')} className={`glass-btn ${activeTab === 'settings' ? '!border-neon-500 !text-neon-500' : ''}`}><Icons.Settings /></button>
+                                    </div>
                                 </div>
                                 {crono.active && activeTab !== 'timer' && (
                                     <CronoBanner c={crono.c} label={bannerLabel} onClick={() => setActiveTab('timer')} />
                                 )}
                             </header>
 
-                            <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+                            <main key={activeTab} className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 fade-up">
                                 {activeTab === 'training' && <TrainingTab usuario={usuario} />}
                                 {activeTab === 'nutrition' && <NutritionTab usuario={usuario} setUsuario={setUsuario} />}
                                 {activeTab === 'progress' && <ProgressTab usuario={usuario} />}
@@ -1620,12 +1735,12 @@
                         </div>
 
                         {/* Barra inferior (móvil y tablet) */}
-                        <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-graphite-900/95 backdrop-blur-md border-t border-graphite-800 rounded-t-3xl z-20 safe-bottom">
-                            <div className="flex justify-around items-center p-2 max-w-md mx-auto">
+                        <nav className="lg:hidden fixed inset-x-4 bottom-3 z-20 safe-bottom">
+                            <div className="max-w-md mx-auto flex items-center justify-around p-2 rounded-[28px] bg-graphite-900/80 backdrop-blur-xl border border-graphite-700 shadow-2xl">
                                 {navItems.map(({ id, label, Icon }) => (
                                     <button key={id} onClick={() => setActiveTab(id)}
-                                        className={`flex-1 flex flex-col items-center space-y-1 p-2 transition-colors cursor-pointer ${activeTab === id ? 'text-neon-500' : 'text-graphite-400'}`}>
-                                        <Icon /><span className="text-[10px] font-medium">{label}</span>
+                                        className={`flex items-center gap-2 px-4 py-3 rounded-2xl transition-all duration-300 cursor-pointer ${activeTab === id ? 'bg-neon-500 text-ink font-bold neon-glow' : 'text-graphite-400'}`}>
+                                        <Icon />{activeTab === id && <span className="text-xs">{label}</span>}
                                     </button>
                                 ))}
                             </div>
