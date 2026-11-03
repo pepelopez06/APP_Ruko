@@ -1792,6 +1792,41 @@
                 if (usuario && usuario.Id && !localStorage.getItem(`ruko_onboarded_${usuario.Id}`)) setOnboard(true);
             }, [usuario ? usuario.Id : null]);
 
+            // Sincroniza el perfil (foto incluida) con el servidor al abrir y al volver a la app
+            useEffect(() => {
+                if (!usuario || !usuario.Id) return;
+                const id = usuario.Id;
+                const refresh = () => {
+                    fetch(`/api/usuario/${id}`)
+                        .then(r => (r.ok ? r.json() : null))
+                        .then(d => {
+                            if (!d || !d.usuario) return;
+                            const srv = { ...d.usuario };
+                            let cached = null;
+                            try { cached = JSON.parse(localStorage.getItem('fitpro_usuario') || 'null'); } catch (e) {}
+                            const srvFoto = srv.Foto || srv.foto;
+                            const locFoto = cached && cached.Id === id ? (cached.Foto || cached.foto) : null;
+                            // Si la foto solo existía en este dispositivo, se sube al servidor
+                            if (!srvFoto && locFoto) {
+                                fetch(`/api/usuario/${id}/foto`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ foto: locFoto }) }).catch(() => {});
+                                srv.Foto = locFoto; srv.foto = locFoto;
+                            }
+                            setUsuario(prev => {
+                                if (!prev || prev.Id !== id) return prev;
+                                const next = { ...prev, ...srv };
+                                if (JSON.stringify(next) === JSON.stringify(prev)) return prev;
+                                localStorage.setItem('fitpro_usuario', JSON.stringify(next));
+                                return next;
+                            });
+                        })
+                        .catch(() => {});
+                };
+                refresh();
+                const onVis = () => { if (!document.hidden) refresh(); };
+                document.addEventListener('visibilitychange', onVis);
+                return () => document.removeEventListener('visibilitychange', onVis);
+            }, [usuario ? usuario.Id : null]);
+
             const setLang = (l) => { setLangState(l); localStorage.setItem('ruko_lang', l); };
             const setTheme = (th) => { setThemeState(th); localStorage.setItem('ruko_theme', th); };
 

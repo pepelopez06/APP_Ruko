@@ -239,6 +239,22 @@ app.put('/api/usuario/:id', async (req, res) => {
     }
 });
 
+app.get('/api/usuario/:id', async (req, res) => {
+    try {
+        const r = await pool.query(
+            'SELECT Id, Nombre, Peso, Altura, Edad, Actividad, Objetivo, Foto FROM Usuarios WHERE Id = $1',
+            [req.params.id]
+        );
+        if (r.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+        res.json({ success: true, usuario: normalizarUsuario(r.rows[0]) });
+    } catch (error) {
+        console.error("Error al leer el usuario:", error);
+        res.status(500).json({ error: "Error al leer el usuario" });
+    }
+});
+
 app.put('/api/usuario/:id/password', async (req, res) => {
     try {
         const { id } = req.params;
