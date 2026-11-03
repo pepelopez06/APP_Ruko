@@ -209,6 +209,12 @@
         };
 
         // ====================================================
+        // CONFIGURACIÓN SINCRONIZADA (nombres de días, cantidad de días, ejercicios hechos)
+        // ====================================================
+        const CFG_KEY = (id) => `ruko_cfg_${id}`;
+        const readCfgCache = (id) => { try { return JSON.parse(localStorage.getItem(CFG_KEY(id)) || 'null'); } catch (e) { return null; } };
+
+        // ====================================================
         // ANILLO DE PROGRESO
         // ====================================================
         const Ring = ({ value, max, label, sub }) => {
@@ -235,12 +241,16 @@
         // ====================================================
         const TrainingTab = ({ usuario }) => {
             const { t, lang } = useT();
-            const [trainingDays, setTrainingDays] = useState(() => { const v = Number(localStorage.getItem('ruko_training_days')); return v >= 1 && v <= 7 ? v : 4; });
+            const [cfg0] = useState(() => readCfgCache(usuario.Id) || {});
+            const [hechos, setHechos] = useState(cfg0.hechos || {});
+            const [heroOpen, setHeroOpen] = useState(false);
+            const [trainingDays, setTrainingDays] = useState(() => { const v = Number(cfg0.diasEntrenamiento || localStorage.getItem('ruko_training_days')); return v >= 1 && v <= 7 ? v : 4; });
             const [inDay, setInDay] = useState(false);
             const [isConfigOpen, setIsConfigOpen] = useState(false);
-            const [currentDay, setCurrentDay] = useState(1);
+            const [currentDay, setCurrentDay] = useState(Number(cfg0.diaActual) || 1);
             const [routines, setRoutines] = useState({});
             const [nombresDias, setNombresDias] = useState(() => {
+                if (cfg0.nombresDias) return cfg0.nombresDias;
                 const saved = localStorage.getItem('ruko_nombres_dias');
                 return saved ? JSON.parse(saved) : { 1: "Pecho", 2: "Espalda", 3: "Piernas", 4: "Hombros" };
             });
@@ -416,10 +426,52 @@
             }
 
             const dbRef = useRef(null);
+            const cfgRef = useRef(cfg0);
+            const cfgTimer = useRef(null);
+            const pushCfg = (partial) => {
+                cfgRef.current = { ...cfgRef.current, ...partial };
+                localStorage.setItem(CFG_KEY(usuario.Id), JSON.stringify(cfgRef.current));
+                clearTimeout(cfgTimer.current);
+                cfgTimer.current = setTimeout(() => {
+                    fetch(`/api/usuario/${usuario.Id}/config`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ config: cfgRef.current })
+                    }).catch(err => console.error("Error al guardar configuración:", err));
+                }, 500);
+            };
+            // Al abrir: el servidor manda; lo que solo estaba en este dispositivo se sube una vez
+            useEffect(() => {
+                fetch(`/api/usuario/${usuario.Id}/config`)
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(d => {
+                        const srv = (d && d.config) || {};
+                        const merged = { nombresDias, diasEntrenamiento: trainingDays, diaActual: currentDay, hechos, ...srv };
+                        const nDias = Number(merged.diasEntrenamiento) || 4;
+                        setNombresDias(merged.nombresDias);
+                        setTrainingDays(nDias);
+                        setCurrentDay(Math.min(Number(merged.diaActual) || 1, nDias));
+                        setHechos(merged.hechos || {});
+                        localStorage.setItem('ruko_nombres_dias', JSON.stringify(merged.nombresDias));
+                        localStorage.setItem('ruko_training_days', String(nDias));
+                        if (JSON.stringify(merged) !== JSON.stringify(srv)) pushCfg(merged);
+                        else { cfgRef.current = merged; localStorage.setItem(CFG_KEY(usuario.Id), JSON.stringify(merged)); }
+                    })
+                    .catch(err => console.error("Error al cargar configuración:", err));
+            }, []);
+            const setDayName = (day, value) => {
+                const nuevos = { ...nombresDias, [day]: value };
+                setNombresDias(nuevos);
+                localStorage.setItem('ruko_nombres_dias', JSON.stringify(nuevos));
+                pushCfg({ nombresDias: nuevos });
+            };
+            const dayLabel = (d) => ((nombresDias[d] || '').trim() || `${t('day')} ${d}`);
             const changeDays = (n) => {
                 setTrainingDays(n);
                 localStorage.setItem('ruko_training_days', String(n));
+                const nuevoDia = currentDay > n ? 1 : currentDay;
                 if (currentDay > n) setCurrentDay(1);
+                pushCfg({ diasEntrenamiento: n, diaActual: nuevoDia });
             };
             const addDay = () => { if (trainingDays < 7) changeDays(trainingDays + 1); };
             // Entrar/salir de un día (el botón "atrás" del celular también vuelve a los módulos)
@@ -430,6 +482,7 @@
             }, []);
             const enterDay = (day) => {
                 setCurrentDay(day);
+                pushCfg({ diaActual: day });
                 setInDay(true);
                 setIsAddingDB(false);
                 window.scrollTo({ top: 0 });
@@ -454,7 +507,22 @@
             }
             const weekPct = Math.min(100, Math.round((weekDone / Math.max(1, trainingDays)) * 100));
             const BARS = 20;
-            const filledBars = Math.round((weekPct / 100) * BARS);
+            const hoyKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const hechosHoy = hechos[hoyKey] || {};
+            const doneCount = activeRoutine.filter(ex => hechosHoy[ex.dbId]).length;
+            const pctDia = activeRoutine.length ? Math.round((doneCount / activeRoutine.length) * 100) : 0;
+            const filledBars = Math.round((pctDia / 100) * BARS);
+            const toggleDone = (dbId) => {
+                const cur = { ...(hechos[hoyKey] || {}) };
+                if (cur[dbId]) delete cur[dbId]; else cur[dbId] = true;
+                const nuevo = { ...hechos, [hoyKey]: cur };
+                const pruned = {};
+                Object.keys(nuevo).sort().slice(-14).forEach(k => { pruned[k] = nuevo[k]; });
+                setHechos(pruned);
+                pushCfg({ hechos: pruned });
+                // Si completaste todos los ejercicios del día, se marca la asistencia de hoy
+                if (cur[dbId] && activeRoutine.length > 0 && activeRoutine.every(ex => cur[ex.dbId]) && !attendance[hoyKey]) toggleAttendanceDay(now.getDate());
+            };
 
             return (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start pb-24 lg:pb-4">
@@ -484,10 +552,15 @@
                     )}
 
                     {/* Tarjeta destacada: HOY */}
-                    <div className="hero rounded-3xl p-5 text-ink neon-glow min-h-[200px] flex flex-col justify-between overflow-hidden fade-up">
+                    <div className="hero rounded-3xl p-5 text-ink neon-glow overflow-hidden fade-up">
                         <div className="flex justify-between items-start">
                             <span className="text-sm font-bold flex items-center gap-1.5">{t('today')} <span>✦</span></span>
-                            <button onClick={() => enterDay(currentDay)} className="w-10 h-10 rounded-full bg-ink/15 hover:bg-ink/25 flex items-center justify-center cursor-pointer transition-colors"><Icons.ArrowUpRight /></button>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setHeroOpen(!heroOpen)} className="w-10 h-10 rounded-full bg-ink/15 hover:bg-ink/25 flex items-center justify-center cursor-pointer transition-colors">
+                                    <span className={`transition-transform duration-300 ${heroOpen ? 'rotate-180' : ''}`}><Icons.ChevronDown /></span>
+                                </button>
+                                <button onClick={() => enterDay(currentDay)} className="w-10 h-10 rounded-full bg-ink/15 hover:bg-ink/25 flex items-center justify-center cursor-pointer transition-colors"><Icons.ArrowUpRight /></button>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 items-end mt-6">
                             <div className="min-w-0">
@@ -497,16 +570,41 @@
                             <div>
                                 <div className="flex items-end gap-[3px] h-14">
                                     {Array.from({ length: BARS }, (_, i) => (
-                                        <span key={i} className="flex-1 rounded-full origin-bottom"
+                                        <span key={i} className="flex-1 rounded-full origin-bottom transition-all duration-500"
                                             style={{ height: i < filledBars ? '100%' : '42%', background: i < filledBars ? '#0e0f11' : 'rgba(14,15,17,0.25)', animation: 'barUp 0.6s cubic-bezier(0.2,0.8,0.2,1) backwards', animationDelay: `${i * 30}ms` }}></span>
                                     ))}
                                 </div>
-                                <div className="flex justify-between text-[11px] font-bold mt-2">
-                                    <span>{weekPct}%</span>
-                                    <span>{weekDone}/{trainingDays} · {t('thisWeek')}</span>
+                                <div className="flex justify-between gap-2 text-[11px] font-bold mt-2">
+                                    <span>{pctDia}% · {doneCount}/{activeRoutine.length}</span>
+                                    <span className="text-right">{weekDone}/{trainingDays} · {t('thisWeek')}</span>
                                 </div>
                             </div>
                         </div>
+                        {heroOpen && (
+                            <div className="mt-4 rounded-2xl bg-ink/10 p-3 space-y-3 fade-up">
+                                <div className="flex flex-wrap gap-2">
+                                    {Array.from({ length: trainingDays }, (_, i) => i + 1).map(d => (
+                                        <button key={d} onClick={() => { setCurrentDay(d); pushCfg({ diaActual: d }); }}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors ${currentDay === d ? 'bg-ink text-neon-400' : 'bg-ink/10 hover:bg-ink/20'}`}>
+                                            {dayLabel(d)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="space-y-2">
+                                    {activeRoutine.length === 0 ? (
+                                        <p className="text-xs font-semibold opacity-70">{t('noExDay')}</p>
+                                    ) : activeRoutine.map(ex => {
+                                        const done = !!hechosHoy[ex.dbId];
+                                        return (
+                                            <button key={ex.dbId} onClick={() => toggleDone(ex.dbId)} className="w-full flex items-center gap-3 text-left cursor-pointer">
+                                                <span className={`w-6 h-6 rounded-full border-2 border-ink flex items-center justify-center shrink-0 transition-colors ${done ? 'bg-ink text-neon-400' : 'text-transparent'}`}><Icons.Check /></span>
+                                                <span className={`text-sm font-semibold truncate ${done ? 'line-through opacity-60' : ''}`}>{ex.name}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Calendario de asistencia */}
@@ -589,11 +687,7 @@
                             <input
                                 type="text"
                                 value={nombresDias[currentDay] || ''}
-                                onChange={(e) => {
-                                    const nuevos = { ...nombresDias, [currentDay]: e.target.value };
-                                    setNombresDias(nuevos);
-                                    localStorage.setItem('ruko_nombres_dias', JSON.stringify(nuevos));
-                                }}
+                                onChange={(e) => setDayName(currentDay, e.target.value)}
                                 placeholder={t('namePh')}
                                 className="w-full bg-transparent text-white font-black text-3xl sm:text-4xl outline-none placeholder-graphite-500 border-b border-transparent focus:border-neon-500"
                             />
@@ -611,7 +705,11 @@
                             activeRoutine.map(exercise => (
                                 <div key={exercise.dbId} className={`${CARD} overflow-hidden`}>
                                     <div className="p-4 flex justify-between items-center gap-3 cursor-pointer hover:bg-graphite-700/30 transition-colors" onClick={() => toggleExpand(exercise.id)}>
-                                        <h3 className="font-bold text-white text-base min-w-0">{exercise.name}</h3>
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <button onClick={(e) => { e.stopPropagation(); toggleDone(exercise.dbId); }}
+                                                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors cursor-pointer ${hechosHoy[exercise.dbId] ? 'bg-neon-500 border-neon-500 text-ink' : 'border-graphite-500 text-transparent hover:border-neon-500'}`}><Icons.Check /></button>
+                                            <h3 className={`font-bold text-base min-w-0 ${hechosHoy[exercise.dbId] ? 'text-graphite-400 line-through' : 'text-white'}`}>{exercise.name}</h3>
+                                        </div>
                                         <div className="flex items-center space-x-3 shrink-0">
                                             <span className="text-xs bg-graphite-700 text-neon-500 px-2 py-1 rounded-full font-medium whitespace-nowrap">{exercise.sets.length} {t('sets')}</span>
                                             <div className={`transform transition-transform ${exercise.expanded ? 'rotate-180' : ''} text-graphite-400`}><Icons.ChevronDown /></div>
@@ -1008,7 +1106,10 @@
         // ====================================================
         const ProgressTab = ({ usuario }) => {
             const { t } = useT();
-            const dayNames = (() => { try { return JSON.parse(localStorage.getItem('ruko_nombres_dias') || '{}'); } catch (e) { return {}; } })();
+            const [dayNames, setDayNames] = useState(() => { const c = readCfgCache(usuario.Id); if (c && c.nombresDias) return c.nombresDias; try { return JSON.parse(localStorage.getItem('ruko_nombres_dias') || '{}'); } catch (e) { return {}; } });
+            useEffect(() => {
+                fetch(`/api/usuario/${usuario.Id}/config`).then(r => (r.ok ? r.json() : null)).then(d => { if (d && d.config && d.config.nombresDias) setDayNames(d.config.nombresDias); }).catch(() => {});
+            }, []);
             const dayLabel = (d) => ((dayNames[d] || '').trim() || `${t('day')} ${d}`);
             const [routines, setRoutines] = useState({});
             const [selectedDay, setSelectedDay] = useState(1);
@@ -1823,9 +1924,12 @@
                         <div className="lg:pl-60">
                             <header className="bg-graphite-950/75 backdrop-blur-xl safe-top pb-3 px-4 sm:px-6 border-b border-graphite-800/60 sticky top-0 z-10">
                                 <div className="max-w-5xl mx-auto flex justify-between items-center">
-                                    <div className="min-w-0">
-                                        <p className="text-[11px] text-graphite-400 leading-none">{t('hello')}</p>
-                                        <p className="text-lg font-black text-white truncate max-w-[55vw] mt-1">{nombreUsuario}</p>
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <Avatar usuario={usuario} size={44} />
+                                        <div className="min-w-0">
+                                            <p className="text-[11px] text-graphite-400 leading-none">{t('hello')}</p>
+                                            <p className="text-sm font-bold text-white truncate max-w-[34vw] sm:max-w-[50vw] mt-1">{nombreUsuario}</p>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <span className="lg:hidden text-xl font-black tracking-tight text-neon-500">RUKO</span>

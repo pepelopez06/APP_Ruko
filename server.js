@@ -283,6 +283,37 @@ app.put('/api/usuario/:id/foto', async (req, res) => {
     }
 });
 
+app.get('/api/usuario/:id/config', async (req, res) => {
+    try {
+        const r = await pool.query('SELECT Config FROM Usuarios WHERE Id = $1', [req.params.id]);
+        let cfg = {};
+        const raw = r.rows[0] && (r.rows[0].config || r.rows[0].Config);
+        if (raw) { try { cfg = JSON.parse(raw); } catch (e) { cfg = {}; } }
+        res.json({ config: cfg });
+    } catch (error) {
+        console.error("Error al leer configuración:", error);
+        res.status(500).json({ error: "Error al leer la configuración" });
+    }
+});
+
+app.put('/api/usuario/:id/config', async (req, res) => {
+    try {
+        const { config } = req.body;
+        if (!config || typeof config !== 'object') {
+            return res.status(400).json({ error: 'Configuración inválida.' });
+        }
+        const texto = JSON.stringify(config);
+        if (texto.length > 100000) {
+            return res.status(400).json({ error: 'Configuración demasiado grande.' });
+        }
+        await pool.query('UPDATE Usuarios SET Config = $1 WHERE Id = $2', [texto, req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error al guardar configuración:", error);
+        res.status(500).json({ error: "Error al guardar la configuración" });
+    }
+});
+
 // ==========================================
 // CONSUMO NUTRICIONAL
 // ==========================================
