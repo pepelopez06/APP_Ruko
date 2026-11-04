@@ -513,6 +513,14 @@
             const pctDia = activeRoutine.length ? Math.round((doneCount / activeRoutine.length) * 100) : 0;
             const filledBars = Math.round((weekPct / 100) * BARS);
             const dayComplete = activeRoutine.length > 0 && doneCount === activeRoutine.length;
+            // Al completar el día, el peso de cada ejercicio se carga en Progreso (aunque no haya cambiado)
+            useEffect(() => {
+                const flag = `ruko_hist_${usuario.Id}_${hoyKey}_${currentDay}`;
+                if (!dayComplete) { localStorage.removeItem(flag); return; }
+                if (localStorage.getItem(flag)) return;
+                activeRoutine.forEach(ex => registrarHistorialAutomatico(ex.name, ex.sets));
+                localStorage.setItem(flag, '1');
+            }, [dayComplete, currentDay]);
             const toggleDone = (dbId) => {
                 const cur = { ...(hechos[hoyKey] || {}) };
                 if (cur[dbId]) delete cur[dbId]; else cur[dbId] = true;
