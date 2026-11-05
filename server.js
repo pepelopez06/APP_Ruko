@@ -10,8 +10,11 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.static(__dirname));
 
 // Conexión a Supabase (Pooler). La cadena va en la variable de entorno DATABASE_URL.
+if (!process.env.DATABASE_URL) {
+    console.error("Falta la variable de entorno DATABASE_URL");
+}
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || "postgresql://postgres.cvaijwcgznsciwhczlmx:Adminpepe90__@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
+    connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
@@ -26,7 +29,12 @@ pool.connect((err, client, release) => {
 // Un hash de bcrypt siempre empieza con $2a$, $2b$ o $2y$
 const isHash = (v) => typeof v === 'string' && /^\$2[aby]\$/.test(v);
 
+// Plan efectivo: 'pro' solo si plan = pro y (sin vencimiento o vencimiento no pasado)
+const PLAN_SQL = "CASE WHEN plan = 'pro' AND (plan_vence IS NULL OR plan_vence >= CURRENT_DATE) THEN 'pro' ELSE 'free' END AS plan_efectivo, TO_CHAR(plan_vence, 'YYYY-MM-DD') AS plan_vence_txt";
+
 const normalizarUsuario = (u) => {
+    const plan = u.plan_efectivo || 'free';
+    const planVence = u.plan_vence_txt || null;
     const id = u.id || u.Id;
     const nombre = u.nombre || u.Nombre;
     const peso = u.peso || u.Peso;
@@ -43,7 +51,9 @@ const normalizarUsuario = (u) => {
         edad, Edad: edad,
         actividad, Actividad: actividad,
         objetivo, Objetivo: objetivo,
-        foto, Foto: foto
+        foto, Foto: foto,
+        plan, Plan: plan,
+        planVence, PlanVence: planVence
     };
 };
 
@@ -191,7 +201,7 @@ app.post('/api/login', async (req, res) => {
     try {
         const { nombre, password } = req.body;
         const resultado = await pool.query(
-            'SELECT Id, Nombre, Password, Peso, Altura, Edad, Actividad, Objetivo, Foto FROM Usuarios WHERE Nombre = $1',
+            'SELECT Id, Nombre, Password, Peso, Altura, Edad, Actividad, Objetivo, Foto, ' + PLAN_SQL + ' FROM Usuarios WHERE Nombre = $1',
             [nombre]
         );
 
@@ -242,7 +252,7 @@ app.put('/api/usuario/:id', async (req, res) => {
 app.get('/api/usuario/:id', async (req, res) => {
     try {
         const r = await pool.query(
-            'SELECT Id, Nombre, Peso, Altura, Edad, Actividad, Objetivo, Foto FROM Usuarios WHERE Id = $1',
+            'SELECT Id, Nombre, Peso, Altura, Edad, Actividad, Objetivo, Foto, ' + PLAN_SQL + ' FROM Usuarios WHERE Id = $1',
             [req.params.id]
         );
         if (r.rows.length === 0) {
