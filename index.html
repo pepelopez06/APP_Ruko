@@ -212,6 +212,7 @@
         // CONFIGURACIÓN SINCRONIZADA (nombres de días, cantidad de días, ejercicios hechos)
         // ====================================================
         const CFG_KEY = (id) => `ruko_cfg_${id}`;
+        const byId = (data) => (Array.isArray(data) ? data.slice() : []).sort((a, b) => (Number(a.id || a.Id) || 0) - (Number(b.id || b.Id) || 0));
         const readCfgCache = (id) => { try { return JSON.parse(localStorage.getItem(CFG_KEY(id)) || 'null'); } catch (e) { return null; } };
 
         // ====================================================
@@ -267,7 +268,7 @@
                     .then(res => res.json())
                     .then(data => {
                         const formatted = {};
-                        (Array.isArray(data) ? data : []).forEach(item => {
+                        byId(data).forEach(item => {
                             const dia = item.diasemana || item.DiaSemana;
                             const idReg = item.id || item.Id;
                             const nombreEj = item.nombreep || item.nombreejercicio || item.NombreEjercicio;
@@ -1130,7 +1131,7 @@
                     .then(res => res.json())
                     .then(data => {
                         const formatted = {};
-                        (Array.isArray(data) ? data : []).forEach(item => {
+                        byId(data).forEach(item => {
                             const dia = item.diasemana || item.DiaSemana;
                             const nombreEj = item.nombreep || item.nombreejercicio || item.NombreEjercicio;
                             if (!formatted[dia]) formatted[dia] = [];
