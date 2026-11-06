@@ -322,14 +322,14 @@
 
             const registrarHistorialAutomatico = (nombreEjercicio, sets) => {
                 const maxPeso = Math.max(...sets.map(s => Number(s.weight) || 0));
-                if (maxPeso <= 0) return;
+                if (maxPeso <= 0) return Promise.resolve(true);
                 const now = new Date();
                 const fechaHoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                fetch('/api/historial-cargas', {
+                return fetch('/api/historial-cargas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuarioId: usuario.Id, fecha: fechaHoy, ejercicio: nombreEjercicio, pesoMaximo: maxPeso })
-                }).catch(err => console.error("Error al registrar historial automático:", err));
+                }).then(r => r.ok).catch(err => { console.error("Error al registrar historial automático:", err); return false; });
             };
 
             const toggleExpand = (exId) => {
@@ -516,11 +516,11 @@
             const dayComplete = activeRoutine.length > 0 && doneCount === activeRoutine.length;
             // Al completar el día, el peso de cada ejercicio se carga en Progreso (aunque no haya cambiado)
             useEffect(() => {
-                const flag = `ruko_hist_${usuario.Id}_${hoyKey}_${currentDay}`;
+                const flag = `ruko_hist2_${usuario.Id}_${hoyKey}_${currentDay}`;
                 if (!dayComplete) { localStorage.removeItem(flag); return; }
                 if (localStorage.getItem(flag)) return;
-                activeRoutine.forEach(ex => registrarHistorialAutomatico(ex.name, ex.sets));
-                localStorage.setItem(flag, '1');
+                Promise.all(activeRoutine.map(ex => registrarHistorialAutomatico(ex.name, ex.sets)))
+                    .then(res => { if (res.every(Boolean)) localStorage.setItem(flag, '1'); });
             }, [dayComplete, currentDay]);
             const toggleDone = (dbId) => {
                 const cur = { ...(hechos[hoyKey] || {}) };
