@@ -5,6 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0e0f11">
     <title>RUKO</title>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icons/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="RUKO">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script>
+        // Agrega el token de sesión a cada pedido a la API. Si la sesión venció, vuelve al login.
+        (function () {
+            if (localStorage.getItem('fitpro_usuario') && !localStorage.getItem('ruko_token')) {
+                localStorage.removeItem('fitpro_usuario');
+            }
+            const fetchOriginal = window.fetch.bind(window);
+            window.fetch = function (url, opciones) {
+                if (typeof url !== 'string' || !url.startsWith('/api/')) return fetchOriginal(url, opciones);
+                const headers = new Headers((opciones && opciones.headers) || {});
+                const token = localStorage.getItem('ruko_token');
+                if (token) headers.set('Authorization', 'Bearer ' + token);
+                return fetchOriginal(url, { ...(opciones || {}), headers }).then(function (res) {
+                    const propio = url === '/api/login' || /\/password$/.test(url);
+                    if (res.status === 401 && !propio) {
+                        localStorage.removeItem('ruko_token');
+                        localStorage.removeItem('fitpro_usuario');
+                        window.location.reload();
+                    }
+                    return res;
+                });
+            };
+            // Permite que un nombre como "Pecho/Triceps" se corte después de la barra y no en medio de una palabra
+            window.cortable = function (texto) { return String(texto).replace(/\//g, '/\u200B'); };
+        })();
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -574,7 +607,7 @@
                         </div>
                         <div className="grid grid-cols-2 gap-4 items-end mt-6">
                             <div className="min-w-0">
-                                <p className="text-3xl font-black leading-[1.05] break-words">{nombresDias[currentDay] || t('noName')}</p>
+                                <p className="text-3xl font-black leading-[1.05] break-words">{window.cortable(nombresDias[currentDay] || t('noName'))}</p>
                                 <p className="text-xs font-semibold opacity-70 mt-2">{t('day')} {currentDay} · {activeRoutine.length} {t('exercises')}</p>
                             </div>
                             <div>
@@ -655,7 +688,7 @@
                                             <span className={`w-9 h-9 rounded-full flex items-center justify-center ${sel ? 'bg-neon-500 text-ink' : 'bg-graphite-700 text-graphite-300'}`}><Icons.ArrowUpRight /></span>
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-xl font-black leading-tight text-white break-words">{nombresDias[day] || t('noName')}</p>
+                                            <p className="text-xl font-black leading-tight text-white break-words">{window.cortable(nombresDias[day] || t('noName'))}</p>
                                             <div className="mt-2 space-y-0.5">
                                                 {list.slice(0, 2).map(ex => <p key={ex.dbId} className="text-[11px] text-graphite-400 truncate">{ex.name}</p>)}
                                                 {list.length > 2 && <p className="text-[11px] text-graphite-500">+{list.length - 2}</p>}
@@ -820,6 +853,7 @@
             const [edad, setEdad] = useState(usuario.Edad || 20);
             const [actividad, setActividad] = useState(usuario.Actividad || 1.55);
             const [objetivo, setObjetivo] = useState(usuario.Objetivo || 'mantenimiento');
+            const [sexo, setSexo] = useState(usuario.Sexo || usuario.sexo || '');
 
             const [busqueda, setBusqueda] = useState('');
             const [alimentos, setAlimentos] = useState([]);
@@ -847,24 +881,28 @@
                 const e = nv.edad !== undefined ? nv.edad : edad;
                 const act = nv.actividad !== undefined ? nv.actividad : actividad;
                 const obj = nv.objetivo !== undefined ? nv.objetivo : objetivo;
+                const sx = nv.sexo !== undefined ? nv.sexo : sexo;
 
-                const actualizado = { ...usuario, Peso: p, Altura: a, Edad: e, Actividad: act, Objetivo: obj };
+                const actualizado = { ...usuario, Peso: p, Altura: a, Edad: e, Actividad: act, Objetivo: obj, Sexo: sx || null, sexo: sx || null };
                 localStorage.setItem('fitpro_usuario', JSON.stringify(actualizado));
                 if (setUsuario) setUsuario(actualizado);
 
                 fetch(`/api/usuario/${usuario.Id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ peso: p, altura: a, edad: e, actividad: act, objetivo: obj })
+                    body: JSON.stringify({ peso: p, altura: a, edad: e, actividad: act, objetivo: obj, sexo: sx || undefined })
                 }).catch(err => console.error("Error al actualizar perfil:", err));
             };
 
-            const tmb = (10 * peso) + (6.25 * altura) - (5 * edad) + 5;
+            // Mifflin-St Jeor: +5 en hombres, -161 en mujeres. El piso evita metas demasiado bajas.
+            const tmb = (10 * peso) + (6.25 * altura) - (5 * edad) + (sexo === 'femenino' ? -161 : 5);
             const mantenimiento = Math.round(tmb * actividad);
-            const caloriasMeta = objetivo === 'volumen' ? mantenimiento + 300 : objetivo === 'definicion' ? mantenimiento - 400 : mantenimiento;
+            const metaSinPiso = objetivo === 'volumen' ? mantenimiento + 300 : objetivo === 'definicion' ? mantenimiento - 400 : mantenimiento;
+            const pisoCalorias = sexo === 'femenino' ? 1200 : 1500;
+            const caloriasMeta = Math.max(metaSinPiso, pisoCalorias);
             const proteinasMeta = Math.round(peso * 2.0);
             const grasasMeta = Math.round((caloriasMeta * 0.25) / 9);
-            const carbosMeta = Math.round((caloriasMeta - (proteinasMeta * 4) - (grasasMeta * 9)) / 4);
+            const carbosMeta = Math.max(0, Math.round((caloriasMeta - (proteinasMeta * 4) - (grasasMeta * 9)) / 4));
 
             const buscarAlimentos = (termino) => {
                 setBusqueda(termino);
@@ -976,6 +1014,17 @@
 
 
                         <div className="mb-4">
+                            <label className="text-xs text-graphite-400 block mb-1">{t('sexLabel')}</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {[['masculino', t('sexM')], ['femenino', t('sexF')]].map(([k, l]) => (
+                                    <button key={k} type="button" onClick={() => { setSexo(k); guardarPerfil({ sexo: k }); }}
+                                        className={`py-2 rounded-lg text-sm font-bold cursor-pointer border ${sexo === k ? 'bg-neon-500 text-black border-neon-500' : 'bg-graphite-900 text-graphite-300 border-graphite-700'}`}>{l}</button>
+                                ))}
+                            </div>
+                            {!sexo && <p className="text-xs text-neon-500 mt-2">{t('sexHint')}</p>}
+                        </div>
+
+                        <div className="mb-4">
                             <label className="text-xs text-graphite-400 block mb-1">{t('actLevel')}</label>
                             <select value={actividad} onChange={(e) => { const v = Number(e.target.value); setActividad(v); guardarPerfil({ actividad: v }); }}
                                 className={`w-full ${INPUT} p-2.5 text-sm font-bold`}>
@@ -996,6 +1045,8 @@
                             <span className="text-xs text-graphite-400 uppercase tracking-wider font-semibold">{t('goal')}</span>
                             <p className="text-4xl font-black text-neon-500 mt-1">{caloriasMeta} <span className="text-sm font-normal text-graphite-400">kcal</span></p>
                         </div>
+
+                        <p className="text-xs text-graphite-400 text-center mb-4">{metaSinPiso < pisoCalorias ? t('calFloor') + ' ' : ''}{t('calEstimate')}</p>
 
                         <div className="grid grid-cols-3 gap-2 text-center">
                             <div className="bg-graphite-900 p-2.5 rounded-xl border border-graphite-700"><span className="text-[10px] text-graphite-400">{t('protein')}</span><p className="text-sm font-bold text-neon-500">{proteinasMeta}g</p></div>
@@ -1280,14 +1331,14 @@
                 namePh: 'Nombre...', routine: 'Rutina', noName: 'Sin Nombre', exercises: 'ejercicios', noEx: 'No hay ejercicios guardados en este día.', sets: 'series', setCap: 'SET',
                 addSet: '+ Añadir Serie', del: 'Eliminar', explore: 'Explorar Base de Ejercicios del Gym', pickMuscle: 'Selecciona un Músculo o Busca', close: 'Cerrar',
                 searchEx: 'Busca un ejercicio...', noResults: 'No se encontraron ejercicios.',
-                nutCalc: 'Calculadora Nutricional', nutCalcSub: 'Basado en tus datos y nivel de actividad', weight: 'Peso (kg)', height: 'Altura (cm)', age: 'Edad',
+                sexLabel: 'Sexo (para el cálculo)', sexM: 'Hombre', sexF: 'Mujer', sexHint: 'Elegí una opción para que el cálculo sea más preciso.', calEstimate: 'Es una estimación orientativa y no reemplaza la indicación de un profesional.', calFloor: 'Ajustamos la meta para que no sea demasiado baja.', emailOpt: 'Email (opcional)', emailWhy: 'Solo para avisarte novedades de Ruko.', nutCalc: 'Calculadora Nutricional', nutCalcSub: 'Basado en tus datos y nivel de actividad', weight: 'Peso (kg)', height: 'Altura (cm)', age: 'Edad',
                 actLevel: 'Nivel de Actividad Física', act1: 'Sedentario (poco o nada ejercicio)', act2: 'Ligero (ejercicio 1-3 días/sem)', act3: 'Moderado (ejercicio 3-5 días/sem)', act4: 'Intenso (ejercicio 6-7 días/sem)',
-                cut: 'Definición', maint: 'Mantenimiento', bulk: 'Volumen', goal: 'Meta Diaria Recomendada', protein: 'Proteínas', carbs: 'Carbohidratos', fats: 'Grasas', carbsShort: 'Carbos',
+                cut: 'Definición', maint: 'Mantenimiento', bulk: 'Volumen', goal: 'Meta Diaria Estimada', protein: 'Proteínas', carbs: 'Carbohidratos', fats: 'Grasas', carbsShort: 'Carbos',
                 nutLog: 'Registro Nutricional', nutLogSub: 'Busca alimentos en la base de datos', foodPh: 'Escribe un alimento (ej. Asado, Alfajor, Arroz...)', searching: 'Buscando en la base de datos...',
                 base100: 'Base 100g/ml', grams: 'Gramos (g)', glasses: 'Vasos', spoons: 'Cucharadas', add: '+ Agregar', todayIntake: 'Consumo de Hoy', calories: 'Calorías', noFood: 'No has agregado alimentos hoy.',
                 evoTitle: 'Tu progreso', evoSub: 'Mirá cómo vas levantando más peso con el tiempo', selDay: 'Elegí el día', noRoutines: 'Todavía no armaste ningún día de entrenamiento.',
                 selEx: 'Elegí el ejercicio', noExDay: 'Este día no tiene ejercicios', progEmpty: 'Anotá los kilos que usás en cada ejercicio y acá vas a ver cómo mejorás.', chartLabel: 'Tu mejor peso del día (kg)',
-                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', dayDone: '¡Día completado!', attendanceMarked: 'Tu asistencia de hoy quedó marcada.', planFree: 'Gratis', planPro: 'Pro', welcome: '¡Bienvenido a RUKO!', aboutYou: 'Contanos sobre vos', aboutYouSub: 'Los usamos para calcular tus calorías y macros. Después los podés cambiar en Ajustes.', letsGo: '¡Empezar!', skip: 'Saltar introducción', fillData: 'Completá peso, altura y edad con valores válidos.', newDay: 'Nuevo día', added: 'Agregado', today: 'Hoy', completed: 'Completado', thisWeek: 'esta semana', statMax: 'Mejor marca', statSessions: 'Entrenos', statGain: 'Mejora', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
+                saveErr: 'No se pudo guardar. Revisá la conexión con el servidor.', dayDone: '¡Día completado!', attendanceMarked: 'Tu asistencia de hoy quedó marcada.', planFree: 'Gratis', planPro: 'Pro', welcome: '¡Bienvenido a RUKO!', aboutYou: 'Contanos sobre vos', aboutYouSub: 'Los usamos para calcular tus calorías y macros. Después los podés cambiar en Ajustes.', letsGo: '¡Empezar!', skip: 'Saltar introducción', fillData: 'Completá peso, altura, edad y sexo con valores válidos.', newDay: 'Nuevo día', added: 'Agregado', today: 'Hoy', completed: 'Completado', thisWeek: 'esta semana', statMax: 'Mejor marca', statSessions: 'Entrenos', statGain: 'Mejora', hello: 'Hola', navTraining: 'Rutina', navNutrition: 'Nutrición', navProgress: 'Progreso', navTimer: 'Cronómetro', settings: 'Ajustes', logout: 'Salir',
                 yourName: 'Tu Nombre', password: 'Contraseña', login: 'Iniciar Sesión', register: 'Registrarse', noAcc: '¿No tenés cuenta? Registrate acá', haveAcc: '¿Ya tenés cuenta? Iniciá sesión',
                 errCreds: 'Credenciales inválidas.', errConn: 'No se pudo conectar con el servidor.', regOk: '¡Registrado con éxito! Ahora inicia sesión.', regErr: 'Error al registrarse.',
                 tmSub: 'Sigue corriendo aunque uses el resto de la app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Reiniciar', lap: 'Vuelta', laps: 'Vueltas',
@@ -1310,14 +1361,14 @@
                 namePh: 'Nome...', routine: 'Treino', noName: 'Sem Nome', exercises: 'exercícios', noEx: 'Não há exercícios salvos neste dia.', sets: 'séries', setCap: 'SÉRIE',
                 addSet: '+ Adicionar Série', del: 'Excluir', explore: 'Explorar Banco de Exercícios', pickMuscle: 'Escolha um Músculo ou Busque', close: 'Fechar',
                 searchEx: 'Busque um exercício...', noResults: 'Nenhum exercício encontrado.',
-                nutCalc: 'Calculadora Nutricional', nutCalcSub: 'Com base nos seus dados e nível de atividade', weight: 'Peso (kg)', height: 'Altura (cm)', age: 'Idade',
+                sexLabel: 'Sexo (para o cálculo)', sexM: 'Homem', sexF: 'Mulher', sexHint: 'Escolha uma opção para um cálculo mais preciso.', calEstimate: 'É uma estimativa orientativa e não substitui a indicação de um profissional.', calFloor: 'Ajustamos a meta para que não fique baixa demais.', emailOpt: 'E-mail (opcional)', emailWhy: 'Só para avisar novidades do Ruko.', nutCalc: 'Calculadora Nutricional', nutCalcSub: 'Com base nos seus dados e nível de atividade', weight: 'Peso (kg)', height: 'Altura (cm)', age: 'Idade',
                 actLevel: 'Nível de Atividade Física', act1: 'Sedentário (pouco ou nenhum exercício)', act2: 'Leve (exercício 1-3 dias/sem)', act3: 'Moderado (exercício 3-5 dias/sem)', act4: 'Intenso (exercício 6-7 dias/sem)',
-                cut: 'Definição', maint: 'Manutenção', bulk: 'Volume', goal: 'Meta Diária Recomendada', protein: 'Proteínas', carbs: 'Carboidratos', fats: 'Gorduras', carbsShort: 'Carbos',
+                cut: 'Definição', maint: 'Manutenção', bulk: 'Volume', goal: 'Meta Diária Estimada', protein: 'Proteínas', carbs: 'Carboidratos', fats: 'Gorduras', carbsShort: 'Carbos',
                 nutLog: 'Registro Nutricional', nutLogSub: 'Busque alimentos no banco de dados', foodPh: 'Digite um alimento (ex. Churrasco, Arroz...)', searching: 'Buscando no banco de dados...',
                 base100: 'Base 100g/ml', grams: 'Gramas (g)', glasses: 'Copos', spoons: 'Colheres', add: '+ Adicionar', todayIntake: 'Consumo de Hoje', calories: 'Calorias', noFood: 'Você não adicionou alimentos hoje.',
                 evoTitle: 'Seu progresso', evoSub: 'Veja como você levanta cada vez mais peso', selDay: 'Escolha o dia', noRoutines: 'Você ainda não montou nenhum dia de treino.',
                 selEx: 'Escolha o exercício', noExDay: 'Este dia não tem exercícios', progEmpty: 'Anote os quilos que usa em cada exercício e aqui você vê sua evolução.', chartLabel: 'Seu melhor peso do dia (kg)',
-                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', dayDone: 'Dia concluído!', attendanceMarked: 'Sua presença de hoje foi marcada.', planFree: 'Grátis', planPro: 'Pro', welcome: 'Bem-vindo ao RUKO!', aboutYou: 'Conte sobre você', aboutYouSub: 'Usamos para calcular suas calorias e macros. Depois você pode alterá-los em Configurações.', letsGo: 'Começar!', skip: 'Pular introdução', fillData: 'Preencha peso, altura e idade com valores válidos.', newDay: 'Novo dia', added: 'Adicionado', today: 'Hoje', completed: 'Concluído', thisWeek: 'esta semana', statMax: 'Melhor marca', statSessions: 'Treinos', statGain: 'Evolução', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
+                saveErr: 'Não foi possível salvar. Verifique a conexão com o servidor.', dayDone: 'Dia concluído!', attendanceMarked: 'Sua presença de hoje foi marcada.', planFree: 'Grátis', planPro: 'Pro', welcome: 'Bem-vindo ao RUKO!', aboutYou: 'Conte sobre você', aboutYouSub: 'Usamos para calcular suas calorias e macros. Depois você pode alterá-los em Configurações.', letsGo: 'Começar!', skip: 'Pular introdução', fillData: 'Completá peso, altura, edad y sexo con valores válidos.', newDay: 'Novo dia', added: 'Adicionado', today: 'Hoje', completed: 'Concluído', thisWeek: 'esta semana', statMax: 'Melhor marca', statSessions: 'Treinos', statGain: 'Evolução', hello: 'Olá', navTraining: 'Treino', navNutrition: 'Nutrição', navProgress: 'Progresso', navTimer: 'Cronômetro', settings: 'Configurações', logout: 'Sair',
                 yourName: 'Seu Nome', password: 'Senha', login: 'Entrar', register: 'Cadastrar', noAcc: 'Não tem conta? Cadastre-se aqui', haveAcc: 'Já tem conta? Entre',
                 errCreds: 'Credenciais inválidas.', errConn: 'Não foi possível conectar ao servidor.', regOk: 'Cadastro concluído! Agora faça login.', regErr: 'Erro ao cadastrar.',
                 tmSub: 'Continua contando enquanto você usa o resto do app', start: 'Iniciar', pause: 'Pausar', resume: 'Continuar', reset: 'Zerar', lap: 'Volta', laps: 'Voltas',
@@ -1340,14 +1391,14 @@
                 namePh: 'Name...', routine: 'Workout', noName: 'Unnamed', exercises: 'exercises', noEx: 'No exercises saved for this day.', sets: 'sets', setCap: 'SET',
                 addSet: '+ Add Set', del: 'Delete', explore: 'Browse Exercise Library', pickMuscle: 'Pick a Muscle or Search', close: 'Close',
                 searchEx: 'Search an exercise...', noResults: 'No exercises found.',
-                nutCalc: 'Nutrition Calculator', nutCalcSub: 'Based on your data and activity level', weight: 'Weight (kg)', height: 'Height (cm)', age: 'Age',
+                sexLabel: 'Sex (for the calculation)', sexM: 'Male', sexF: 'Female', sexHint: 'Choose an option for a more accurate calculation.', calEstimate: 'This is a rough estimate and does not replace professional advice.', calFloor: 'We adjusted the goal so it is not too low.', emailOpt: 'Email (optional)', emailWhy: 'Only to share Ruko news.', nutCalc: 'Nutrition Calculator', nutCalcSub: 'Based on your data and activity level', weight: 'Weight (kg)', height: 'Height (cm)', age: 'Age',
                 actLevel: 'Physical Activity Level', act1: 'Sedentary (little or no exercise)', act2: 'Light (exercise 1-3 days/wk)', act3: 'Moderate (exercise 3-5 days/wk)', act4: 'Intense (exercise 6-7 days/wk)',
-                cut: 'Cutting', maint: 'Maintenance', bulk: 'Bulking', goal: 'Recommended Daily Goal', protein: 'Protein', carbs: 'Carbs', fats: 'Fats', carbsShort: 'Carbs',
+                cut: 'Cutting', maint: 'Maintenance', bulk: 'Bulking', goal: 'Estimated Daily Goal', protein: 'Protein', carbs: 'Carbs', fats: 'Fats', carbsShort: 'Carbs',
                 nutLog: 'Food Log', nutLogSub: 'Search foods in the database', foodPh: 'Type a food (e.g. Steak, Rice...)', searching: 'Searching the database...',
                 base100: 'Per 100g/ml', grams: 'Grams (g)', glasses: 'Glasses', spoons: 'Tablespoons', add: '+ Add', todayIntake: "Today's Intake", calories: 'Calories', noFood: "You haven't added any food today.",
                 evoTitle: 'Your progress', evoSub: 'See how you lift more weight over time', selDay: 'Pick a day', noRoutines: "You haven't set up any training days yet.",
                 selEx: 'Pick an exercise', noExDay: 'This day has no exercises', progEmpty: "Log the weight you use in each exercise and you'll see your improvement here.", chartLabel: 'Your best weight that day (kg)',
-                saveErr: 'Could not save. Check the server connection.', dayDone: 'Day completed!', attendanceMarked: "Today's attendance has been marked.", planFree: 'Free', planPro: 'Pro', welcome: 'Welcome to RUKO!', aboutYou: 'Tell us about you', aboutYouSub: "We use them to calculate your calories and macros. You can change them later in Settings.", letsGo: "Let's go!", skip: 'Skip intro', fillData: 'Enter a valid weight, height and age.', newDay: 'New day', added: 'Added', today: 'Today', completed: 'Completed', thisWeek: 'this week', statMax: 'Personal best', statSessions: 'Workouts', statGain: 'Gain', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
+                saveErr: 'Could not save. Check the server connection.', dayDone: 'Day completed!', attendanceMarked: "Today's attendance has been marked.", planFree: 'Free', planPro: 'Pro', welcome: 'Welcome to RUKO!', aboutYou: 'Tell us about you', aboutYouSub: "We use them to calculate your calories and macros. You can change them later in Settings.", letsGo: "Let's go!", skip: 'Skip intro', fillData: 'Completá peso, altura, edad y sexo con valores válidos.', newDay: 'New day', added: 'Added', today: 'Today', completed: 'Completed', thisWeek: 'this week', statMax: 'Personal best', statSessions: 'Workouts', statGain: 'Gain', hello: 'Hi', navTraining: 'Workout', navNutrition: 'Nutrition', navProgress: 'Progress', navTimer: 'Stopwatch', settings: 'Settings', logout: 'Log out',
                 yourName: 'Your Name', password: 'Password', login: 'Log In', register: 'Sign Up', noAcc: "Don't have an account? Sign up here", haveAcc: 'Already have an account? Log in',
                 errCreds: 'Invalid credentials.', errConn: 'Could not connect to the server.', regOk: 'Signed up successfully! Now log in.', regErr: 'Sign-up error.',
                 tmSub: 'Keeps running while you use the rest of the app', start: 'Start', pause: 'Pause', resume: 'Resume', reset: 'Reset', lap: 'Lap', laps: 'Laps',
@@ -1554,8 +1605,8 @@
             const hasDefaults = usuario && Number(usuario.Peso) === 75 && Number(usuario.Altura) === 175 && Number(usuario.Edad) === 20;
             const [i, setI] = useState(0);
             const [form, setForm] = useState(() => (onboarding && usuario && !hasDefaults)
-                ? { peso: String(usuario.Peso || ''), altura: String(usuario.Altura || ''), edad: String(usuario.Edad || '') }
-                : { peso: '', altura: '', edad: '' });
+                ? { peso: String(usuario.Peso || ''), altura: String(usuario.Altura || ''), edad: String(usuario.Edad || ''), sexo: usuario.Sexo || usuario.sexo || '' }
+                : { peso: '', altura: '', edad: '', sexo: usuario && (usuario.Sexo || usuario.sexo) || '' });
             const [err, setErr] = useState('');
             const [saving, setSaving] = useState(false);
             const isForm = onboarding && i === slides;
@@ -1563,16 +1614,16 @@
 
             const save = () => {
                 const p = Number(String(form.peso).replace(',', '.')), a = Number(form.altura), e = Number(form.edad);
-                if (!(p >= 20 && p <= 300) || !(a >= 100 && a <= 250) || !(e >= 10 && e <= 100)) { setErr(t('fillData')); return; }
+                if (!(p >= 20 && p <= 300) || !(a >= 100 && a <= 250) || !(e >= 10 && e <= 100) || !form.sexo) { setErr(t('fillData')); return; }
                 setSaving(true);
                 fetch(`/api/usuario/${usuario.Id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ peso: p, altura: a, edad: e, actividad: usuario.Actividad || 1.55, objetivo: usuario.Objetivo || 'mantenimiento' })
+                    body: JSON.stringify({ peso: p, altura: a, edad: e, actividad: usuario.Actividad || 1.55, objetivo: usuario.Objetivo || 'mantenimiento', sexo: form.sexo })
                 })
                     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                     .then(() => {
-                        const u = { ...usuario, Peso: p, peso: p, Altura: a, altura: a, Edad: e, edad: e };
+                        const u = { ...usuario, Peso: p, peso: p, Altura: a, altura: a, Edad: e, edad: e, Sexo: form.sexo, sexo: form.sexo };
                         localStorage.setItem('fitpro_usuario', JSON.stringify(u));
                         setUsuario(u);
                         onClose();
@@ -1603,6 +1654,12 @@
                                                 onChange={(e) => { setForm({ ...form, [k]: e.target.value }); setErr(''); }}
                                                 className={`w-full ${INPUT} p-3 font-bold text-center`} />
                                         </div>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 mt-3">
+                                    {[['masculino', t('sexM')], ['femenino', t('sexF')]].map(([k, l]) => (
+                                        <button key={k} type="button" onClick={() => { setForm({ ...form, sexo: k }); setErr(''); }}
+                                            className={`py-3 rounded-xl text-sm font-bold cursor-pointer border ${form.sexo === k ? 'bg-neon-500 text-black border-neon-500' : 'bg-graphite-800 text-graphite-300 border-graphite-700'}`}>{l}</button>
                                     ))}
                                 </div>
                                 {err && <p className="text-xs text-red-400 font-semibold mt-3">{err}</p>}
@@ -1783,6 +1840,7 @@
             });
             const [pantallaAuth, setPantallaAuth] = useState('login');
             const [nombreInput, setNombreInput] = useState('');
+            const [emailInput, setEmailInput] = useState('');
             const [passwordInput, setPasswordInput] = useState('');
             const [activeTab, setActiveTab] = useState('training');
             const [lang, setLangState] = useState(() => localStorage.getItem('ruko_lang') || detectLang());
@@ -1860,6 +1918,7 @@
                     });
                     const data = await res.json();
                     if (data.success) {
+                        localStorage.setItem('ruko_token', data.token);
                         setUsuario(data.usuario);
                         localStorage.setItem('fitpro_usuario', JSON.stringify(data.usuario));
                     } else {
@@ -1877,10 +1936,11 @@
                     const res = await fetch('/api/register', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ nombre: nombreInput, password: passwordInput })
+                        body: JSON.stringify({ nombre: nombreInput, password: passwordInput, email: emailInput })
                     });
                     const data = await res.json();
                     if (data.success) {
+                        setEmailInput('');
                         alert(t('regOk'));
                         setPantallaAuth('login');
                         setNombreInput(''); setPasswordInput('');
@@ -1897,6 +1957,7 @@
                 setUsuario(null);
                 setActiveTab('training');
                 localStorage.removeItem('fitpro_usuario');
+                localStorage.removeItem('ruko_token');
             };
 
             const ctx = { t, lang };
@@ -1913,6 +1974,13 @@
                                         className="w-full bg-graphite-800 p-3 rounded-lg border border-graphite-700 text-sm outline-none focus:border-neon-500" required />
                                     <input type="password" placeholder={t('password')} value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
                                         className="w-full bg-graphite-800 p-3 rounded-lg border border-graphite-700 text-sm outline-none focus:border-neon-500" required />
+                                    {!esLogin && (
+                                        <div>
+                                            <input type="email" placeholder={t('emailOpt')} value={emailInput} onChange={e => setEmailInput(e.target.value)}
+                                                className="w-full bg-graphite-800 p-3 rounded-lg border border-graphite-700 text-sm outline-none focus:border-neon-500" />
+                                            <p className="text-[11px] text-graphite-400 mt-1">{t('emailWhy')}</p>
+                                        </div>
+                                    )}
                                     <button type="submit" className={`w-full ${BTN_NEON} p-3 rounded-lg text-sm`}>{esLogin ? t('login') : t('register')}</button>
                                     <p className="text-xs text-center text-graphite-400 cursor-pointer pt-2 hover:text-neon-500"
                                         onClick={() => { setPantallaAuth(esLogin ? 'registro' : 'login'); setNombreInput(''); setPasswordInput(''); }}>
