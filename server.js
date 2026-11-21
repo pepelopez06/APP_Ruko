@@ -70,9 +70,11 @@ app.get('/api/health', async (req, res) => {
 // Ruta para buscar alimentos
 app.get('/api/alimentos', async (req, res) => {
     try {
-        const busqueda = req.query.buscar || '';
-        const queryStr = 'SELECT * FROM Alimentos WHERE Nombre ILIKE $1 ORDER BY Nombre ASC LIMIT 50';
-        const resultado = await pool.query(queryStr, [`%${busqueda}%`]);
+        // Cada palabra se busca por separado: "avena panqueque" encuentra "Panqueque de avena"
+        const palabras = String(req.query.buscar || '').trim().split(/\s+/).filter(Boolean).slice(0, 6);
+        const params = palabras.length ? palabras.map(w => `%${w}%`) : ['%'];
+        const where = params.map((_, i) => `Nombre ILIKE $${i + 1}`).join(' AND ');
+        const resultado = await pool.query(`SELECT * FROM Alimentos WHERE ${where} ORDER BY LENGTH(Nombre) ASC, Nombre ASC LIMIT 60`, params);
         res.json(resultado.rows);
     } catch (error) {
         console.error(error);
@@ -121,6 +123,38 @@ app.put('/api/rutinas/:id', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Error al actualizar el ejercicio" });
+    }
+});
+
+// Eliminar un día completo: borra sus ejercicios y corre los días siguientes hacia atrás
+app.delete('/api/rutinas/dia', async (req, res) => {
+    try {
+        const { usuarioId, dia } = req.query;
+        if (!usuarioId || !dia) return res.status(400).json({ error: 'Faltan datos' });
+        await pool.query('DELETE FROM RutinasEntrenamiento WHERE UsuarioId = $1 AND DiaSemana = $2', [usuarioId, dia]);
+        await pool.query('UPDATE RutinasEntrenamiento SET DiaSemana = DiaSemana - 1 WHERE UsuarioId = $1 AND DiaSemana > $2', [usuarioId, dia]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al eliminar el día" });
+    }
+});
+
+// Agregar varios ejercicios de una vez (rutinas listas / duplicar día)
+app.post('/api/rutinas/lote', async (req, res) => {
+    try {
+        const { usuarioId, items } = req.body;
+        if (!usuarioId || !Array.isArray(items) || items.length === 0 || items.length > 200) return res.status(400).json({ error: 'Datos inválidos' });
+        for (const it of items) {
+            await pool.query(
+                'INSERT INTO RutinasEntrenamiento (UsuarioId, DiaSemana, NombreEjercicio, SetsJson) VALUES ($1, $2, $3, $4)',
+                [usuarioId, it.diaSemana, it.ejercicio, it.setsJson]
+            );
+        }
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Error al guardar la rutina" });
     }
 });
 
