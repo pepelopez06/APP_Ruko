@@ -68,13 +68,70 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Ruta para buscar alimentos
+// ----------------------------------------------------------
+// Productos con marca: se buscan en Open Food Facts (Argentina) y se guardan
+// en tu tabla Alimentos. Sin duplicados: índice único por código de barras
+// y por nombre (si ya existe, se ignora).
+// ----------------------------------------------------------
+const offCache = new Map(); // búsqueda -> hora de la última consulta
+const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+async function traerDeOpenFoodFacts(texto) {
+    const clave = texto.toLowerCase();
+    const ultima = offCache.get(clave);
+    if (ultima && Date.now() - ultima < 6 * 60 * 60 * 1000) return; // ya se consultó hace poco
+    offCache.set(clave, Date.now());
+    if (offCache.size > 500) offCache.delete(offCache.keys().next().value);
+
+    const url = 'https://world.openfoodfacts.org/cgi/search.pl?action=process&json=1&page_size=20'
+        + '&search_simple=1&tagtype_0=countries&tag_contains_0=contains&tag_0=argentina'
+        + '&fields=code,product_name,brands,nutriments'
+        + '&search_terms=' + encodeURIComponent(texto);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000);
+    try {
+        const r = await fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': 'RUKO-App/1.0 (contacto: app-ruko.onrender.com)' } });
+        if (!r.ok) return;
+        const data = await r.json();
+        for (const p of (data.products || [])) {
+            const n = p.nutriments || {};
+            const kcal = num(n['energy-kcal_100g']);
+            const prot = num(n['proteins_100g']);
+            const carb = num(n['carbohydrates_100g']);
+            const gras = num(n['fat_100g']);
+            const nombreBase = (p.product_name || '').trim();
+            // Solo productos con datos completos y coherentes
+            if (!p.code || !nombreBase || kcal === null || prot === null || carb === null || gras === null) continue;
+            if (kcal < 0 || kcal > 900 || prot > 100 || carb > 100 || gras > 100 || prot + carb + gras > 105) continue;
+            const marca = (p.brands || '').split(',')[0].trim();
+            const nombre = (marca && !nombreBase.toLowerCase().includes(marca.toLowerCase()) ? `${nombreBase} (${marca})` : nombreBase).slice(0, 120);
+            await pool.query(
+                `INSERT INTO Alimentos (Nombre, Calorias, Proteinas, Carbohidratos, Grasas, Codigo, Marca, Fuente)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'openfoodfacts')
+                 ON CONFLICT DO NOTHING`,
+                [nombre, Math.round(kcal), prot, carb, gras, String(p.code), marca || null]
+            );
+        }
+    } catch (e) {
+        console.error('Open Food Facts no respondió:', e.message);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 app.get('/api/alimentos', async (req, res) => {
     try {
-        // Cada palabra se busca por separado: "avena panqueque" encuentra "Panqueque de avena"
-        const palabras = String(req.query.buscar || '').trim().split(/\s+/).filter(Boolean).slice(0, 6);
+        const texto = String(req.query.buscar || '').trim();
+        const palabras = texto.split(/\s+/).filter(Boolean).slice(0, 6);
         const params = palabras.length ? palabras.map(w => `%${w}%`) : ['%'];
         const where = params.map((_, i) => `Nombre ILIKE $${i + 1}`).join(' AND ');
-        const resultado = await pool.query(`SELECT * FROM Alimentos WHERE ${where} ORDER BY LENGTH(Nombre) ASC, Nombre ASC LIMIT 60`, params);
+        const sql = `SELECT * FROM Alimentos WHERE ${where} ORDER BY LENGTH(Nombre) ASC, Nombre ASC LIMIT 60`;
+        let resultado = await pool.query(sql, params);
+        // Si hay pocos resultados propios, se completa con productos de marca
+        if (texto.length >= 3 && resultado.rows.length < 8) {
+            await traerDeOpenFoodFacts(texto);
+            resultado = await pool.query(sql, params);
+        }
         res.json(resultado.rows);
     } catch (error) {
         console.error(error);
